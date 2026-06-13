@@ -39,9 +39,11 @@ and `run_sae_deseason.sh` (deseasonalized SAE chain).
 # 1. Clone the upstream SAVAR library into ./savar (gitignored here)
 git clone https://github.com/xtibau/savar.git savar   # commit 532e5e5
 
-# 2. Python deps
-pip install numpy scipy scikit-learn torch matplotlib tigramite
+# 2. Python deps (pinned)
+pip install -r requirements.txt
 ```
+
+See `requirements.txt` for pinned versions (incl. the PyTorch CUDA 12.4 build note).
 
 GPU (CUDA) is used for CNN/SAE training; data generation and PCMCI are CPU-only.
 
