@@ -1,0 +1,31 @@
+# ── Third-party dependency (clone separately — see README) ───────────────────
+# Upstream SAVAR library: https://github.com/xtibau/savar  (commit 532e5e5)
+savar/
+
+# ── Large generated data (regenerate with data_gen/) ─────────────────────────
+data/
+sae_data/
+sae_data_dy005/
+sae_data_diurnal/
+sae_data_diurnal_deseason/
+
+# ── Model checkpoints (regenerate with train/) ───────────────────────────────
+checkpoints/
+checkpoints_dy005/
+checkpoints_diurnal/
+
+# ── Run logs ─────────────────────────────────────────────────────────────────
+logs/
+logs_diurnal/
+*.log
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ── Local editor / agent config ──────────────────────────────────────────────
+.claude/
+.vscode/
+.DS_Store
