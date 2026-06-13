@@ -58,6 +58,23 @@ bash    run_diurnal_pipeline.sh          # CNN train → PCMCI (raw+deseason) �
 bash    run_sae_deseason.sh              # deseasonalized SAE chain
 ```
 
+## Tests
+
+Repeatable checks for the invariants the pipeline relies on (cycle math, the
+tigramite `(cause, eff, tau)` convention, ground-truth graph structure, the
+deseasonalization identity, and regression guards on the dynamic-`T` fix and
+post-reorg import paths):
+
+```bash
+pip install -r requirements-dev.txt
+pytest                       # ~3s; no GPU required
+```
+
+Tests that need the upstream `savar` library or generated data skip cleanly when
+those aren't present. `diagnostics.py` provides run-context breadcrumbs
+(`run_context(...)` / `run_failure(...)`) logging device/CUDA, git commit, and
+dataset/checkpoint/output paths for diagnosing cluster runs.
+
 ## Key results (diurnal/annual run)
 
 - **PCMCI**: raw F1 = 0.293 (cycle confounds → 58 false positives) → deseasonalized
