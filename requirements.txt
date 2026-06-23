@@ -14,3 +14,11 @@ torch==2.6.0
 
 # Upstream SAVAR library is a separate clone, not a pip dependency — see README:
 #   git clone https://github.com/xtibau/savar.git savar
+
+# ── Alternative causal discoverers (pcmci/run_baselines.py) ────────────────────
+# TSCI: vendored into pcmci/methods/tsci/ (MIT, KurtButler/tangentspaces) — runs on
+#   the deps above, no extra install.
+# DYNOTEARS: causalnex pins numpy<1.24 / pandas<2.0 (incompatible with numpy 2.0),
+#   so it runs in an ISOLATED venv, never imported into the main env:
+#     python3.9 -m venv .venv_causalnex && .venv_causalnex/bin/pip install causalnex
+#   The adapter (pcmci/methods/dynotears.py) shells out to it.

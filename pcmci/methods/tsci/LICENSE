@@ -1,0 +1,37 @@
+The TSCI algorithm and the functions in tsci_core.py are vendored (trimmed and
+lightly adapted) from:
+
+    KurtButler/tangentspaces  —  https://github.com/KurtButler/tangentspaces
+    "Tangent Space Causal Inference: Leveraging Vector Fields for Causal
+     Discovery in Dynamical Systems", Butler, Waxman & Djurić, NeurIPS 2024.
+    arXiv:2410.23499
+
+Adaptations: removed jaxtyping/tqdm/statsmodels dependencies (numpy-based ACF;
+plain loops), made the optional mutual-information path (bmi) a lazy import so the
+default nearest-neighbour TSCI runs on the project's main numpy-2 environment.
+
+Original license below.
+
+----------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2024 Kurt Butler
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
