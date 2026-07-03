@@ -92,3 +92,17 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
   slow-mode tau compressed ~3.8x (noise shrinkage). Closing section written in
   notes/session_results.md (status table, Block-A verdict, top-3 follow-ups).
   Session complete: A,B,C,C2,D,E,F,G,H all done.
+
+---
+
+# Follow-up session — 2026-07-03 (afternoon): Top-3 follow-ups
+
+- **[FU1 DONE] Block G collapse explained.** Found stride-5 cadence confound in
+  `sae_data_hetdynamics_eqvar/activations_full.npy` (T_eff 480 vs T 2400):
+  Block G's (c) scored coarse-unit lags against fine-unit GT. Stride-1
+  re-extraction + per-lag readouts (`pcmci/explain_activation_collapse.py`):
+  within-window frames decodable at |r| 0.995-1.000 (all modes), PCMCI+ on the
+  delta=0 readout F1=0.855 = true-Z 0.853; Block G's forecast-target object
+  0.595 (was 0.020). DMD on activation streams Spearman 0.976 = pixel-DMD.
+  VERDICT: activations do NOT lack lag structure; Block G's
+  "representation-level loss" retracted. results/activation_collapse_explained.npy.

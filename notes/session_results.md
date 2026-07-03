@@ -316,7 +316,9 @@ overlap 0.0000) — the Adag consistency conditions hold trivially for this rung
 *nothing*: (b) recovers the exact same graph as true Z, edge for edge, on every
 realisation. The pipeline's actual object — pooled GNN activations — collapses
 to F1 0.020. **All causal-signal loss is representation-level, not
-aggregation-level.** Caveats: (c)'s ridge readout is itself weak on fast modes
+aggregation-level.** *[CORRECTED by Follow-up 1 below: the (c) collapse was a
+stride-5 cadence artifact in the activation extraction, not representation
+loss — at stride 1 the pooled activations recover F1 0.855 = true-Z.]* Caveats: (c)'s ridge readout is itself weak on fast modes
 (in-sample |r| 0.17 for X0 vs 0.74 for X7), and the GNN's K=3 input window
 smears lags by design — both are properties of the representation pathway being
 measured, which is the point. This gates the future overlapping-modes rung:
@@ -405,3 +407,122 @@ that supports linear readout but not per-mode surgery.
    use group-sparse / decorrelated-dictionary objectives) before training the
    SAE, and re-score with the Block-C suite — uniqueness and leakage are the
    metrics to move.
+
+simplified summary: 
+ Block A — VPD decomposition test
+  Tried to split the model's inner workings into separate mechanisms, hoping the built-in speed differences (the 22.8×) would force clean separation. It failed — the method collapsed everything
+  into one blob. Conclusion: the failure is the method's fault, not the data's.
+
+  Block B — Poke-and-watch test
+  Gave the model a nudge on one weather pattern and watched how it responded over time. It got the directions and timing of cause-and-effect right for the fast patterns, but only recovered
+  about half the true relationships, and it couldn't hold onto the slow patterns' long timescales.
+
+  Block C — Better scorecard for the feature-finder (SAE)
+  Re-scored an earlier tool using a stricter, literature-standard metric. The old results held up, and the sharper finding is that each "feature" can't cleanly tell one weather pattern from
+  another — they all track shared background content.
+
+  Block C2 — Fancier feature-finder bake-off
+  Swapped in a more flexible version of that tool (KAN) to see if it did better. It tied — no real improvement — so they kept the simpler original.
+
+  Block E — Can we tell which way the arrows point?
+  Tested whether existing statistical methods could figure out the direction of certain cause-effect links. They performed at coin-flip level (~50%) — no better than guessing. That problem
+  stays unsolved.
+
+  Block D — Where does pattern-identity go?
+  Investigated why the features can't separate patterns. Found that all 8 patterns crowd into one shared region of the model instead of getting their own space — identity gets diluted and
+  smeared together.
+
+  Block F — Do the features actually steer the model?
+  Pushed on individual features to see if they act like clean control knobs for one pattern. Pushing did produce smooth, predictable effects — but it moved all patterns at once, so each feature
+  is a global volume knob, not a per-pattern handle.
+
+  Block G — Is the blurring step to blame?
+  Checked whether the step that pools pixels into patterns loses the causal signal. It doesn't — pooling was perfectly clean. The signal loss happens inside the model's representation, which
+  pinpoints the real culprit.
+
+  Block H — Independent timescale check
+  Used a simple, model-free math tool on the raw data to verify the patterns' speed ordering. It nailed the ordering (0.98 correlation), confirming the slow/fast structure is genuinely there in
+  the data — even though absolute speeds get squished.
+
+
+---
+
+# Follow-up session — 2026-07-03 (afternoon)
+
+Executes the closing section's Top-3 follow-ups, in order.
+
+## Follow-up 1 — Explain the Block G collapse (F1 0.853 → 0.020)
+
+**Setup.** `pcmci/explain_activation_collapse.py`,
+`results/activation_collapse_explained.npy`. First finding is a *bug-level*
+confound: `sae_data_hetdynamics_eqvar/activations_full.npy` is (100, 8, **480**,
+256) against T=2400 — the pooled GNN activations were extracted at **stride 5**
+(verified: `Z_full` aligns with `latent_states[:, t+K]` only for stride 5).
+Block G's series (c) therefore ran PCMCI+ at 5-fine-step cadence while being
+scored against fine-unit ground-truth lags (1..6) — every true edge was
+unmatchable by construction. Series (a)/(b) ran at stride 1. Fix: re-extract
+stride-1 pooled activations for reals 0–23 (PCMCI) + 80–99 (ridge fit), cached
+at `sae_data_hetdynamics_eqvar/activations_stride1_sel.npy` (44, 8, 2397, 256).
+
+**(i) Per-lag ridge readouts** (fit on tail-20 reals, |r| held-out on reals
+0–23; δ = target offset Z_j(e+δ) from window-end frame e = t+K−1):
+
+| mode | δ=−4 | −3 | **−2** | **−1** | **0** | +1 (fcst tgt) | +2 | +3 | +4 |
+|---|---|---|---|---|---|---|---|---|---|
+| X0 | 0.05 | 0.18 | 0.995 | 0.995 | 0.999 | 0.13 | 0.01 | 0.01 | 0.03 |
+| X1 | 0.14 | 0.27 | 0.995 | 0.995 | 0.999 | 0.36 | 0.10 | 0.03 | 0.03 |
+| X2 | 0.13 | 0.36 | 0.996 | 0.996 | 0.999 | 0.45 | 0.20 | 0.08 | 0.03 |
+| X3 | 0.25 | 0.47 | 0.996 | 0.996 | 0.999 | 0.49 | 0.22 | 0.08 | 0.02 |
+| X4 | 0.33 | 0.55 | 0.997 | 0.997 | 1.000 | 0.55 | 0.30 | 0.18 | 0.10 |
+| X5 | 0.41 | 0.65 | 0.997 | 0.997 | 1.000 | 0.68 | 0.50 | 0.37 | 0.27 |
+| X6 | 0.51 | 0.72 | 0.998 | 0.998 | 0.999 | 0.74 | 0.58 | 0.44 | 0.32 |
+| X7 | 0.54 | 0.73 | 0.998 | 0.998 | 1.000 | 0.74 | 0.55 | 0.42 | 0.34 |
+
+All three frames INSIDE the K=3 window are near-losslessly decodable
+(|r| 0.995–1.000, **every** mode incl. fastest X0), and the within-window
+*change* Z_j(e)−Z_j(e−2) reads out at |r| = 0.997 for all modes. The K=3 conv
+does NOT smear lags — the activation keeps the three input frames linearly
+separable. Outside the window, |r| decays and is monotone in φ (that decay is
+forecast skill / intrinsic memory, not lag structure).
+
+**(ii) PCMCI+ at matched (stride-1) cadence** (ParCorr, τ_max=6, α=0.05,
+24 reals — identical protocol to Block G):
+
+| series | F1 vs GT | P | R |
+|---|---|---|---|
+| (a) true Z (Block G) | 0.853 | 0.75 | 1.00 |
+| (c) pooled acts, stride 5, lumped readout (Block G) | 0.020 | 0.02 | 0.02 |
+| (c′) stride 1, readout δ=0 (last input frame) | **0.855** | 0.75 | 1.00 |
+| (c′) stride 1, readout δ=−2 (first input frame) | 0.847 | 0.74 | 1.00 |
+| (c′) stride 1, readout δ=+1 (forecast target, Block G's object) | 0.595 | 0.47 | 0.81 |
+
+**(iii) DMD on GNN activation streams** (rank 20, 20 reals, stride-1 streams;
+stacked 8×256-channel matrix, mode matched by block norm; secondary: per-block
+DMD, eigenvalue matched by corr with Z_j):
+
+| mode | X0 | X1 | X2 | X3 | X4 | X5 | X6 | X7 |
+|---|---|---|---|---|---|---|---|---|
+| τ design | 0.53 | 0.83 | 1.15 | 1.67 | 2.59 | 4.03 | 6.63 | 11.99 |
+| τ act (stacked) | 0.51 | 0.70 | 0.79 | 0.81 | 1.00 | 2.26 | 1.79 | 3.74 |
+| τ act (per-block) | 0.76 | 0.77 | 1.01 | 0.92 | 1.36 | 2.18 | 2.57 | 3.19 |
+
+**Spearman(τ_design, τ_DMD-acts) = 0.976 (both variants) — identical to the
+pixel-DMD 0.976.** Slow-mode compression (X7 12.0 → 3.2–3.7, ~3.2–3.8×) matches
+the pixel-DMD noise shrinkage, i.e. the GNN's internal representation adds NO
+extra timescale compression. Block B's rollout damping (uniform decay beyond
+~10 autoregressive steps) is a property of the *generative loop*, not of the
+representation.
+
+**Verdict on the key question: activations do NOT lack lag structure.** The
+Block G 0.853 → 0.020 drop decomposes as ~all cadence artifact + readout-target
+choice: at stride 1 the nowcast readout (δ=0) recovers the graph at
+**F1 0.855 = true-Z (0.853)**, edge-for-edge precision/recall. Even Block G's
+exact object (the forecast-target readout) reaches 0.595 once the cadence is
+fixed — the residual gap vs 0.853 is prediction noise in the readout (|r| 0.13
+on X0), not missing lag structure. Consequences: (1) the Block G "all
+distortion is representation-level" verdict is RETRACTED; representation-level
+loss is ~zero for causal-graph purposes. (2) Downstream SAE/VPD pipelines are
+NOT doomed by missing lag structure — the activation pathway carries the full
+graph; what they fail at (uniqueness, per-mode surgery) is mode *identity*, not
+lag content. (3) All future activation-side causal work must extract at
+stride 1 (or match τ units to the extraction stride).
