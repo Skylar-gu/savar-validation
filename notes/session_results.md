@@ -122,4 +122,64 @@ in the early response only", not as quantitative timescale recovery.
 
 ---
 
+## Block C — SAE metric-suite upgrade (SynthSAEBench-style)
+
+**Setup.** `sae/eval_sae_metrics.py`: Hungarian-matched MCC
+(`linear_sum_assignment` on the feature×mode |Pearson| matrix — 8 globally
+*distinct* features, no double counting), per-mode matched F1 (feature-active
+vs |Z| above median), feature uniqueness (matched-mode |r| minus best
+other-mode |r|). Per-mode variant scores the union pool of all 8 per-mode SAEs'
+features encoded on every stream. Aggregate: `results/sae_metrics_suite.npy`.
+
+| dataset / variant | Hungarian MCC | mean uniqueness | mean matched F1 | old best-\|r\| mean |
+|---|---|---|---|---|
+| finecadence / per-mode | 0.341 | −0.007 | 0.447 | 0.305 |
+| hetdynamics / mixed | 0.387 | +0.030 | 0.485 | 0.393 |
+| hetdynamics / per-mode | 0.421 | −0.042 | 0.555 | 0.359 |
+| eqvar / mixed | 0.416 | +0.043 | 0.493 | 0.419 |
+| eqvar / per-mode | 0.463 | −0.109 | 0.517 | 0.385 |
+| eqvar / mixed, 3-seed retrain (final ckpts) | **0.4064 ± 0.0036** | −0.000 ± 0.031 | 0.512 ± 0.012 | — |
+
+Per-mode matched |r| (eqvar mixed): X0 0.12, X1 0.23, X2 0.33, X3 0.37,
+X4 0.45, X5 0.58, X6 0.63, X7 0.63 — monotone in φ.
+
+**Reading.**
+1. The literature-standard global metric *confirms* rather than deflates the
+   old story: Hungarian matching costs almost nothing vs the best-|r| scalars
+   (eqvar mixed 0.419 → 0.416), so the old numbers were not double-counting
+   features. The dataset ordering finecadence < hetdynamics < eqvar (0.34 →
+   0.42 → 0.46 per-mode) survives the metric upgrade — timescale heterogeneity
+   genuinely improves feature–mode alignment.
+2. Seed variance is tiny (±0.004 MCC): the mixed-SAE result is stable, not a
+   lucky init. (Old `sae_mixed.pt` was best-val selected: 0.416; final-ckpt
+   seeds: 0.406 — selection on recon MSE was inflating MCC only ~0.01.)
+3. **Uniqueness ≈ 0 everywhere** is the new, sharper statement of the failure:
+   even the matched feature for a mode correlates almost as strongly with its
+   best *other* mode. Features track shared slow content, not mode identity —
+   quantitative setup for Block D's dilution prediction.
+
+## Block C2 — KAN-SAE bake-off
+
+**Setup.** `SAE_ARCH=kan` flag on `sae/train_sae_mixed.py` (per-feature 8-basis
+RBF spline gates on encoder pre-activations, identity-initialized; TopK +
+linear decoder unchanged). Identical data, identical seeds {0,1,2} as Block C's
+retrains; scored on FINAL checkpoints (never selected on recon MSE). Paired
+table: `results/kan_sae_bakeoff.npy`.
+
+| metric | TopK (mean±std) | KAN (mean±std) | paired Δ (KAN−TopK) |
+|---|---|---|---|
+| Hungarian MCC | 0.4064 ± 0.0036 | 0.4055 ± 0.0085 | −0.0008 ± 0.0068 |
+| matched F1 | 0.5117 ± 0.0123 | 0.4879 ± 0.0496 | −0.0238 ± 0.0511 |
+| uniqueness | −0.000 ± 0.031 | −0.004 ± 0.028 | −0.004 ± 0.056 |
+
+**Gate decision: KAN does NOT win beyond seed error bars (it ties MCC, is
+noisier on F1) → TopK stays primary.** No Block D/F reruns with KAN codes.
+Roadmap consequence: the extractor for GraphCast activations stays the plain
+TopK SAE (keeps comparability with the MacMillan & Ouellette GraphCast SAEs);
+the saturating-AR nonlinearity is evidently not the binding constraint at this
+activation→Z fidelity — consistent with Block C showing the ceiling is mode
+identity, not encoder expressivity.
+
+---
+
 *(further blocks appended as they complete)*

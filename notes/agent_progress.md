@@ -56,3 +56,11 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
   piled on X6/X7, sp(phi,ent)=+0.50: the single shared gate concentrates on
   slow-mode blobs. VERDICT: data-problem hypothesis NOT confirmed; collapse is
   method/objective-level. results/vpd_eqvar_redundancy_c16.npy. Committing A.
+- **[05:35] Block C DONE.** Metric suite on all artifacts + 3-seed eqvar
+  retrain: MCC finecadence 0.341 < hetdynamics 0.421 < eqvar 0.463 (permode);
+  eqvar mixed seeds 0.4064+-0.0036. Hungarian matching confirms (not deflates)
+  old best-|r| story; uniqueness ~0 = mode-identity failure sharpened.
+  results/sae_metrics_suite.npy.
+- **[05:35] Block C2 DONE.** KAN-SAE bake-off: paired dMCC=-0.0008+-0.0068 ->
+  TIE; gate says NO propagation, TopK stays primary, no D/F reruns.
+  results/kan_sae_bakeoff.npy.
