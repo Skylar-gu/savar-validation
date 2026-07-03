@@ -182,4 +182,36 @@ identity, not encoder expressivity.
 
 ---
 
+## Block E — τ=0 orientation benchmark (Gong et al. 2015 / LiNGAM)
+
+**Question.** Our skew-normal innovations make aliased τ=0 edges (fine lag
+ℓ < stride s) identifiable *in principle*. Can existing non-Gaussian estimators
+actually orient the edges PCMCI+ leaves `o-o`?
+
+**VAR-LiNGAM** (`pcmci/run_varlingam_orientation.py`,
+`results/orientation_benchmark.npy`; 40 realisations, lags = coarse τ_max):
+
+| stride | orient acc (threshold-free \|B0\| contest, GT aliased pairs) | CON-F1 undirected @thr .01 | PCMCI+ CON-F1 (existing sweep) | LAG-F1 | PCMCI+ overall |
+|---|---|---|---|---|---|
+| 2 | 0.532 (33/62) | 0.629 | 0.63 | 0.633 | 0.66 |
+| 3 | 0.519 (40/77) | 0.452 | 0.49 | 0.436 | — |
+| 4 | 0.554 (31/56) | 0.280 | 0.38 | 0.345 | — |
+
+**Hybrid one-shot** (plan-sanctioned single follow-up,
+`pcmci/run_hybrid_orientation.py`, `results/orientation_hybrid.npy`): PCMCI+
+skeleton → residualize on lagged parents → DirectLiNGAM on residuals:
+orientation accuracy 0.519 / 0.541 / 0.559 (B0 contest), 0.500 / 0.558 / 0.528
+(causal order) for s=2/3/4.
+
+**Reading.** Orientation of the aliased edges is at CHANCE (~0.5) for both the
+off-the-shelf VAR-LiNGAM and the hybrid, at every stride. Adjacency recovery
+roughly matches PCMCI+ at s=2 and falls behind at s=3,4. So Gong-style
+theoretical identifiability does NOT cash out at our T (~ hundreds of coarse
+steps), skewness level, and aliasing mix — the non-Gaussian signal surviving
+subsampling + the ℓ<s aliasing is too weak in practice. The PCMCI+ 0.08–0.30
+orient-rate problem stays open; heavier-tailed innovations or longer series are
+the levers if orientation matters downstream.
+
+---
+
 *(further blocks appended as they complete)*

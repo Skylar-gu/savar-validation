@@ -64,3 +64,7 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
 - **[05:35] Block C2 DONE.** KAN-SAE bake-off: paired dMCC=-0.0008+-0.0068 ->
   TIE; gate says NO propagation, TopK stays primary, no D/F reruns.
   results/kan_sae_bakeoff.npy.
+- **[05:50] Block E DONE.** VAR-LiNGAM orientation on aliased pairs at chance
+  (0.52-0.55 all strides); hybrid PCMCI+skeleton+DirectLiNGAM-on-residuals
+  also chance (0.50-0.56). Theoretical identifiability does not cash out at
+  our T/skewness. results/orientation_benchmark.npy, orientation_hybrid.npy.
