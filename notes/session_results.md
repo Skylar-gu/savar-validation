@@ -695,3 +695,57 @@ representation-level" is retracted (FU1); Block A's "collapse is
 method/objective-level" is amended — the *pattern* collapse was method-level
 (fixed by decorrelation), the absence of *mode-level* mechanisms is
 model-level (FU2 + FU3 triangulate a single mode-agnostic operator).
+
+---
+
+# Moving-mechanism sub-resolution session — 2026-07-03 (evening)
+
+Spec: `notes/moving_mechanism_subres_spec.md` (supersedes the position-locked
+framing; machinery from `notes/subres_spatial_dealiasing_plan.md`). Sequencing:
+T0 gate → movmech generator + train → P1/P2 → T1–T5 → T6.
+
+## T0 — spatial de-aliasing identifiability floor (clean Fourier, no GNN)
+
+**Setup.** `pcmci/subres_identifiability.py`,
+`results/subres_t0_identifiability.npy`. 1-D fine grid Lf=64, T=4000,
+per-pixel noise σ=√0.05 (SAVAR DY_SCALE), skew-normal AR(1) amplitudes at unit
+stationary variance (no amplitude cue). Colliding pairs: (s=4, k 3↔19) and
+(s=2, k 3↔29 — the movmech operator's stride). φ_low=0.90 fixed, φ_high swept.
+Oracle = Kalman+RTS on the exact collided measurement m(t)=c_lo·a_lo+c_hi·a_hi
+(known φ); linear = supervised ridge on a ±12-frame window of all coarse
+pixels (fit half 1, corr half 2); baseline = |corr(m, a_high)| = the raw
+mixture (0.703 at equal variance — recovery must EXCEED this to count as
+de-aliasing).
+
+corr(â_high, a_high), 8 seeds (both configs give identical D_sub numbers —
+same collided measurement model):
+
+| Δφ | D_sub oracle | D_sub ridge | D_avg(s2) oracle | D_avg(s2) ridge | D_avg(s4) oracle |
+|---|---|---|---|---|---|
+| 0.00 (twin) | 0.705 | 0.620–0.655 | 0.011 | 0.034 | 0.138 |
+| 0.10 | 0.728 | 0.645–0.683 | 0.008 | 0.053 | 0.149 |
+| 0.30 | 0.786 | 0.714–0.749 | 0.003 | 0.091 | 0.192 |
+| 0.45 | 0.819 | 0.754–0.786 | 0.001 | 0.120 | 0.225 |
+| 0.60 | 0.844 | 0.787–0.815 | −0.001 | 0.152 | 0.256 |
+| 0.75 | 0.866 | 0.815–0.839 | −0.003 | 0.188 | 0.287 |
+
+Mixture baseline is flat at 0.703–0.705 for D_sub at every Δφ.
+
+**Reading.**
+1. The phenomenon exists at our T/noise/φ-spread: D_sub recovery rises
+   monotonically from the mixture floor (0.705 at Δφ=0, the identical-twin
+   anchor — exactly no separation) to 0.866 at Δφ=0.75; excess over baseline
+   0 → +0.16. A non-oracle windowed ridge tracks the oracle within 0.03–0.09,
+   so recovery does not require known dynamics.
+2. Operator fork behaves as designed: under D_avg the s2 collided channel is
+   destroyed (oracle ≈ 0; c_hi = 0 exactly). The small D_avg ridge climb
+   (≤0.19 s2, ≤0.29 s4) is residual attenuated-but-not-annihilated high-k
+   leakage (boxcar transfer ≠ 0 off-Nyquist, e.g. 0.346 at s=4/k=19) that the
+   full-pixel ridge exploits — for the movmech generator the checkerboard subs
+   sit at EXACT Nyquist where the 2×2 block average is identically zero, so
+   the β-testbed D_avg control is exact.
+3. Δφ dose-response (T5 anchor): identifiability curve is smooth and monotone;
+   Δφ ≥ ~0.3 gives a clearly separated (>0.08 excess) recovery.
+
+**Verdict: GATE PASS** — proceed with the full de-aliasing battery (T1–T5) on
+the moving-mechanism testbed. Twin-null and dose-response anchors established.
