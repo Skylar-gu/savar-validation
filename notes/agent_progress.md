@@ -68,3 +68,27 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
   (0.52-0.55 all strides); hybrid PCMCI+skeleton+DirectLiNGAM-on-residuals
   also chance (0.50-0.56). Theoretical identifiability does not cash out at
   our T/skewness. results/orientation_benchmark.npy, orientation_hybrid.npy.
+- **[05:55] Blocks D/F/H in flight.** D (Ising) fitting ~500 logistic
+  regressions (sklearn lbfgs convergence warnings on some features — non-fatal,
+  couplings usable). F crashed twice on data-layout assumptions (60K subsample
+  > population; split obs are (T,50,50) not (2500,T)) — both fixed, relaunched.
+  H (DMD) launched. G queued behind D (only 4 cores).
+- **[18:35 takeover]** Headless agent exited prematurely after Block E (~05:55):
+  its final message waited on a "background watcher" that cannot re-invoke a
+  one-shot `claude -p` process. The detached D/F/H jobs it launched all
+  completed (results written 05:28–06:28) but were never analyzed or committed;
+  G never started. Interactive session took over the wrap-up.
+- **[18:40] Block G DONE** (run in takeover session, 24 realisations, ~25 min):
+  W blobs perfectly disjoint (Jaccard 0.000); pooled pixels F1 0.853 == true-Z
+  (edge agreement 1.000), pooled GNN activations F1 0.020 -> ALL causal-signal
+  loss is representation-level, not aggregation. results/aggregation_consistency.npy.
+- **[18:50] D/F/H analyzed + written up.** D: all 8 modes tiling in ONE shared
+  community (no capture, ratios 1.02-1.18); identity diluted (median id-R2
+  0.03, 9 dedicated coders >0.5); demeaned-variant table is a no-op by
+  construction (Pearson shift-invariance) — flagged in write-up. F: monotone
+  linear dose-response (gated R2 up to 0.99) but leakage 0.81-0.94 -> features
+  are global amplitude knobs, not mode handles; success bar NOT met. H: DMD on
+  raw pixels, Spearman 0.976 vs designed tau spectrum, blob cos 0.64-0.90,
+  slow-mode tau compressed ~3.8x (noise shrinkage). Closing section written in
+  notes/session_results.md (status table, Block-A verdict, top-3 follow-ups).
+  Session complete: A,B,C,C2,D,E,F,G,H all done.

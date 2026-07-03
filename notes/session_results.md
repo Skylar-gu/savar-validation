@@ -214,4 +214,194 @@ the levers if orientation matters downstream.
 
 ---
 
-*(further blocks appended as they complete)*
+## Block D — Dilution diagnosis via inverse-Ising + community structure
+
+**Question.** Goodfire concept-manifold taxonomy: do modes land in capture /
+tiling / dilution? Prediction: mode *identity* in dilution, slow-mode *content*
+approaching capture. (`sae/ising_regimes.py`, `results/ising_regimes.npy`;
+mixed eqvar SAE, 484/512 features kept at >0.5% activity, pseudo-likelihood
+Ising fit on 120k samples, Louvain on |J|.)
+
+Louvain finds **3 communities** (sizes 116 / 247 / 121); within-community
+mean |J| = 0.234 / 0.197 / 0.195 vs global 0.169 — real but weak modularity.
+
+| mode | regime | top1 \|r\| | top1/top2 | best comm | top-20 share |
+|---|---|---|---|---|---|
+| X0 | tiling | 0.118 | 1.18 | 1 | 0.70 |
+| X1 | tiling | 0.249 | 1.07 | 1 | 0.85 |
+| X2 | tiling | 0.327 | 1.06 | 1 | 0.80 |
+| X3 | tiling | 0.373 | 1.06 | 1 | 0.70 |
+| X4 | tiling | 0.455 | 1.02 | 1 | 0.80 |
+| X5 | tiling | 0.578 | 1.03 | 1 | 0.85 |
+| X6 | tiling | 0.628 | 1.11 | 1 | 0.70 |
+| X7 | tiling | 0.629 | 1.03 | 1 | 0.75 |
+
+**Reading.** No capture anywhere (top1/top2 ratios 1.02–1.18, capture threshold
+1.5). All 8 modes are classified tiling — but they all tile the **same**
+community (comm 1, the 247-feature one). This is not eight mode-specific tiles;
+it is one shared subspace that every mode's top features live in — the Ising
+view of the same phenomenon as uniqueness ≈ 0 (Block C) and steering leakage
+(Block F). Content correlation strength is monotone in slowness (0.118 → 0.629
+with φ), so slow-mode content is *better represented* but never captured by a
+dominant feature.
+
+**Identity signal.** Feature-activation ~ mode-label R²: median 0.030, mean
+0.070 — identity is diluted across the dictionary — but with a thin dedicated
+tail: 9 features have id-R² > 0.5 (max 0.896), and all of them sit in comm 1
+as well. Per-community mean id-R²: comm 1 = 0.119 vs 0.026 / 0.015. So identity
+is not a separate community; a few identity-coder features are embedded inside
+the one shared content community.
+
+**Caveat (variant design flaw).** The "demeaned = content-only" table is
+bit-identical to raw *by construction*: per-stream demeaning subtracts a
+constant per column and Pearson correlation is shift-invariant, so the
+classifier cannot distinguish the two variants. The identity/content split is
+carried entirely by the id-R² analysis above, which is unaffected.
+
+**Prediction scorecard:** "identity in dilution" — half-right (diluted in the
+median, but with dedicated identity coders); "slow content approaches capture" —
+NO: correlations rise with slowness but stay in tiling.
+
+---
+
+## Block F — Steering dose–response (causal validation of SAE features)
+
+**Question.** Are the Hungarian-matched slow-mode SAE features causal steering
+handles? Steer H ← H + α·d_f at the last MP layer (all nodes),
+α ∈ {−3,−1,+1,+3}·σ_f, decode, project Δpred onto every mode pattern.
+(`sae/steering_dose_response.py`, `results/steering_dose_response.npy`;
+240 test windows, targets X5→f216, X6→f475, X7→f143.)
+
+| mode | slope | linearity R² | leakage (off/on) | active-window slope / R² | inactive slope / R² |
+|---|---|---|---|---|---|
+| X5 (f216) | +0.0161 | 0.670 | **0.812** | +0.0272 / 0.975 | +0.0086 / 0.559 |
+| X6 (f475) | +0.0124 | 0.975 | **0.944** | +0.0131 / 0.989 | +0.0119 / 0.968 |
+| X7 (f143) | −0.0149 | 0.941 | **0.841** | −0.0171 / 0.992 | −0.0124 / 0.922 |
+
+**Reading.** Dose–response is monotone and linear — in the time-aware variant
+(windows where the feature is naturally active) linearity R² reaches 0.97–0.99,
+and the active/inactive slope gap is large for X5 (3.2×), confirming the
+CFD-GNN paper's point that steering works best in-distribution. X7's negative
+slope is just an anti-aligned decoder direction. **But the success bar fails on
+specificity: leakage is 0.81–0.94** — at +3σ, steering X5's feature moves X5 by
++0.185 and the *other seven modes* by +0.09…+0.17. Since every W row is
+L1-normalized, near-equal pooled responses mean Δpred is nearly uniform across
+nodes: the decoder's Jacobian is spatially homogeneous, and the feature acts as
+a **global amplitude knob, not a mode-local handle**. Consistent with Blocks
+C/D: the features tile one shared subspace, so pushing any of them pushes the
+shared direction.
+
+**Outcome: success bar NOT met** (monotonicity yes, leakage ≪ 1 no).
+
+---
+
+## Block G — Aggregation-consistency check on W-pooling (Adag)
+
+**Question.** Does pixel→mode aggregation itself distort conditional-independence
+structure, or is the pipeline's causal-signal loss in the representation?
+PCMCI+ (ParCorr, τ_max = max fine lag, α = 0.05) on (a) true Z, (b) W-pooled
+pixels, (c) ridge readout of W-pooled GNN activations; 24 realisations.
+(`pcmci/aggregation_consistency.py`, `results/aggregation_consistency.npy`.)
+
+W row supports are **perfectly disjoint** (max off-diag Jaccard = 0.0000, mass
+overlap 0.0000) — the Adag consistency conditions hold trivially for this rung.
+
+| series | F1 vs GT | P | R | F1 vs (a) |
+|---|---|---|---|---|
+| (a) true Z | 0.853 | 0.75 | 1.00 | 1.000 |
+| (b) W-pooled pixels | 0.853 | 0.75 | 1.00 | **1.000** |
+| (c) W-pooled GNN activations | **0.020** | 0.02 | 0.02 | 0.032 |
+
+**Reading.** The cleanest localization result of the session. Pooling destroys
+*nothing*: (b) recovers the exact same graph as true Z, edge for edge, on every
+realisation. The pipeline's actual object — pooled GNN activations — collapses
+to F1 0.020. **All causal-signal loss is representation-level, not
+aggregation-level.** Caveats: (c)'s ridge readout is itself weak on fast modes
+(in-sample |r| 0.17 for X0 vs 0.74 for X7), and the GNN's K=3 input window
+smears lags by design — both are properties of the representation pathway being
+measured, which is the point. This gates the future overlapping-modes rung:
+when blobs overlap, redo the Jaccard check before blaming the representation.
+
+---
+
+## Block H — Koopman/DMD timescale cross-check
+
+**Question.** Architecture-free linear-surrogate readout: does rank-20 DMD on
+raw eqvar **pixel data** recover the designed φ timescale spectrum?
+(`pcmci/dmd_timescales.py`, `results/dmd_timescales.npy`; 20 realisations,
+medians of per-blob matched eigenvalues.)
+
+| mode | X0 | X1 | X2 | X3 | X4 | X5 | X6 | X7 |
+|---|---|---|---|---|---|---|---|---|
+| τ design | 0.53 | 0.83 | 1.15 | 1.67 | 2.59 | 4.03 | 6.63 | 11.99 |
+| τ DMD | 0.33 | 0.30 | 0.70 | 1.23 | 1.33 | 2.10 | 2.79 | 3.15 |
+| blob cos | 0.64 | 0.69 | 0.82 | 0.78 | 0.67 | 0.90 | 0.82 | 0.90 |
+
+**Spearman(τ_design, τ_DMD) = 0.976** — the timescale *ordering* is fully
+recoverable from pixels by a linear surrogate, and the leading DMD modes'
+spatial supports match the W blob footprints (cos 0.64–0.90, best on slow
+modes). Absolute timescales are compressed, increasingly so for slow modes
+(X7: 12.0 → 3.1, ~3.8×) — consistent with the known DMD eigenvalue-shrinkage
+bias under measurement noise rather than anything model-related. Note this ran
+on pixel data per the plan (architecture-free baseline); DMD on GNN activation
+streams is a cheap unfinished follow-up that would directly test how much of
+the dynamics the GNN linearizes internally — and whether the activation
+pathway's τ compression matches Block B's rollout damping.
+
+---
+
+## Closing — session status and verdicts
+
+*(Blocks A–E run + written up by the overnight agent; D/F/H computations
+launched by the agent and completed ~06:28, analyzed and written up in the
+follow-up session; Block G run entirely in the follow-up session.)*
+
+| block | status | headline |
+|---|---|---|
+| A — VPD on eqvar | **done** | PR ≈ 1 at C=64 *and* C=16/IM×30 → **data-problem verdict NOT confirmed**; collapse is method/objective-level (but layer-3 blob CV 0.85, gates see the timescale lever) |
+| B — impulse response | done | F1 0.500 vs PCMCI-on-Z 0.823 (bar not met); all detected edges lag-correct; rollout damping caps recall |
+| C — SAE metric suite | done | Hungarian MCC 0.341 (fc) < 0.421 (het) < 0.463 (eqvar), seed-stable ±0.004; uniqueness ≈ 0 |
+| C2 — KAN-SAE bake-off | done | paired ΔMCC −0.001 ± 0.007 → tie; **TopK stays primary**, no propagation |
+| D — Ising regimes | done | all 8 modes = tiling **in one shared community**; identity diluted (median id-R² 0.03) with 9 dedicated coders |
+| E — τ=0 orientation | done | VAR-LiNGAM + hybrid both at chance (0.50–0.56); Gong identifiability doesn't cash out at our T/skew |
+| F — steering | done | monotone, linear (gated R² up to 0.99) but leakage 0.81–0.94 → **global knob, not mode handle** |
+| G — aggregation consistency | done | pooling lossless (F1 0.853 = true-Z, agreement 1.000); pooled activations F1 0.020 → **all distortion is representation-level** |
+| H — DMD timescales | done | Spearman 0.976 vs designed φ spectrum from raw pixels; slow-mode τ compressed ~3.8× (noise shrinkage) |
+
+**Block-A verdict, stated plainly:** the data-problem hypothesis is NOT
+confirmed. Giving VPD a checkpoint trained on 22.8× heterogeneous timescales
+does not make components differentiate (PR ≈ 1 under both the standard config
+and the 4×-fewer-components / 30×-minimality amplifier). The redundant-shredding
+collapse is a property of the VPD objective as configured, not of the data.
+The gates *do* register the data lever (blob CV 0.038 → 0.851 at the last MP
+MLP, slow-mode concentration, sp(φ, entropy) = +0.50) — heterogeneity shows up
+inside the single shared gate pattern but minimality never splits it apart.
+
+**The session's through-line.** Every representation-side *measurement* works
+(probes, Hungarian MCC ordering, DMD ordering, dose monotonicity), and every
+*mechanism-isolation* attempt fails for its own reason (VPD objective collapse,
+impulse-response damping, LiNGAM sample inefficiency, steering leakage,
+PCMCI-on-activations collapse) — and D/F/G triangulate the same cause: the GNN
+concentrates mode information in **one shared, spatially-homogeneous subspace**
+that supports linear readout but not per-mode surgery.
+
+**Top-3 follow-ups:**
+1. **Explain the G collapse (biggest lever for the GraphCast goal).** Pooling
+   is lossless, so the F1 0.853 → 0.020 drop is entirely in the activation
+   pathway. Decompose it: (i) rerun (c) with per-lag readouts / longer horizon
+   to separate K=3 window smearing from information loss; (ii) DMD on
+   activation streams (the cheap H follow-up) to see whether the GNN's internal
+   τ compression mirrors Block B's rollout damping. If activations
+   fundamentally lack lag structure, no SAE/VPD variant downstream can recover
+   the graph.
+2. **VPD objective surgery.** The verdict says method-level: gates see the
+   lever but minimality never splits components. Try an explicit
+   anti-redundancy term (pairwise gate-map decorrelation or orthogonality on
+   rank-1 factors) and/or per-component data attribution, on the eqvar
+   checkpoint where layer-3 gates already concentrate on slow modes.
+3. **Break the shared subspace before the SAE.** C/D/F all point at one global
+   amplitude direction absorbing everything (f495-style features, one Ising
+   community, uniform steering Jacobian). Project out the shared direction (or
+   use group-sparse / decorrelated-dictionary objectives) before training the
+   SAE, and re-score with the Block-C suite — uniqueness and leakage are the
+   metrics to move.
