@@ -114,3 +114,11 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
   preference does NOT rise. Success bar not met; failure factored: pattern
   collapse = method-level (fixed), absence of mode mechanisms = model-level.
   results/vpd_eqvar_redundancy_decor{,_c10}.npy.
+- **[FU3 DONE] Shared-subspace break.** Diagnostics: mixed-fit single direction
+  = full readout BUT deflation flat (high-rank shared signal, projection
+  impossible); cross-application readout uniqueness <= 0.024 (mode-agnostic
+  encoder). proj variant = null (MCC 0.411+-0.007, uniq -0.032). ZCA whiten:
+  uniq ~0 -> +0.068+-0.016 (only mover; exceeds linear ceiling via TopK
+  identity gating) at cost MCC 0.406->0.320, F1 0.512->0.327. Steering leakage
+  unchanged (0.84->0.88; protocol-bounded). results/shared_subspace_diag.npy,
+  results/sae_shared_subspace_break.npy, results/steering_shared_break_*.npy.

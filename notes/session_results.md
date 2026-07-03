@@ -599,3 +599,99 @@ components): NOT met — but the failure is now cleanly factored.**
    and VPD (now de-redundified) correctly reports that. The Block-A verdict
    should be amended: the *pattern collapse* was method-level; the *absence of
    mode-level mechanisms* looks model-level, not method-level.
+
+## Follow-up 3 — Break the shared subspace before the SAE
+
+**Diagnostics first** (`sae/preprocess_shared_subspace.py`,
+`results/shared_subspace_diag.npy`; eqvar pooled activations, train split =
+first 85 reals, held-out = last 15):
+
+1. **One direction ≈ the whole readout.** A single ridge direction fit on the
+   MIXED stream (target = own-stream Z, no mode label) reads out every mode:
+   held-out |r| = 0.12 / 0.35 / 0.43 / 0.48 / 0.55 / 0.67 / 0.71 / 0.73
+   (X0..X7) — matching the full 256-dim per-mode readouts.
+2. **But deflation is flat.** Project that direction out and refit: mean
+   cross-mode |r| = 0.506 → 0.506 → 0.506 → 0.506 over 4 deflations, and
+   per-mode ridge ceilings are unchanged after k=1 or k=2 projection. The
+   shared signal is HIGH-RANK — every removed direction is instantly replaced.
+   There is no small "global amplitude direction" to project out; the C/D/F
+   picture needs rewording from "one shared direction" to "one shared
+   *signal*, redundantly distributed across the activation space".
+3. **No mode-unique linear structure.** Cross-application matrix: mode j's
+   readout applied to stream j′ reads Z_j′ as well as j′'s own readout does
+   (readout uniqueness = own − best-other: −0.59, −0.35, −0.25, −0.24, −0.18,
+   −0.03, +0.004, +0.024 for X0..X7). The pooled activation is a **mode-
+   agnostic amplitude encoder**: which blob a vector was pooled from leaves
+   ~no linearly usable trace in how Z is encoded. This is the
+   representation-level ceiling that made SAE uniqueness ≈ 0.
+
+**Interventions** (each a full datadir; `train_sae_mixed.py` /
+`eval_sae_metrics.py` unchanged; 3 seeds, FINAL ckpts;
+`results/sae_shared_subspace_break.npy`):
+`sae_data_hetdynamics_eqvar_proj/` (k=1 shared-direction projection — the
+literal follow-up ask, predicted null by diag 2) and
+`sae_data_hetdynamics_eqvar_whiten/` (ZCA whitening, eigenvalue floor
+1e-6·λ_max — rebalances the low-variance per-blob identity fingerprints that
+per-channel normalization + TopK reconstruction deprioritize; per-mode ridge
+ceilings verified unchanged under whitening).
+
+| variant | Hungarian MCC | mean uniqueness | mean matched F1 |
+|---|---|---|---|
+| baseline (raw acts, 3 seeds) | 0.4064 ± 0.0030 | −0.0000 ± 0.0253 | 0.5117 ± 0.0101 |
+| proj (k=1) | 0.4110 ± 0.0068 | −0.0322 ± 0.0284 | 0.5168 ± 0.0040 |
+| **whiten (ZCA)** | 0.3201 ± 0.0089 | **+0.0680 ± 0.0158** | 0.3267 ± 0.0115 |
+| (Block C reference: eqvar mixed best-val ckpt) | 0.416 | +0.043 | 0.493 |
+
+**Steering leakage rerun** (`sae/steering_shared_break.py`, Block-F protocol,
+seed0-final ckpts, variant-matched Hungarian targets;
+`results/steering_shared_break_{whiten,baseline_seed0}.npy`):
+
+| variant | X5 leak | X6 leak | X7 leak | mean |
+|---|---|---|---|---|
+| Block F (old best-val ckpt) | 0.812 | 0.944 | 0.841 | 0.866 |
+| baseline seed0-final | 0.816 | 0.916 | 0.775 | 0.836 |
+| whiten seed0-final | 0.808 | 0.964 | 0.873 | 0.882 |
+
+**Outcome vs the success bar (move uniqueness ↑ and leakage ↓): half-met.**
+1. Projection is a confirmed NULL (MCC/uniq/F1 all within seed noise of
+   baseline) — exactly as the deflation diagnostic predicted. The prescribed
+   intervention was impossible in principle, and the diagnostic showing *why*
+   (high-rank shared signal) is the more valuable artifact.
+2. Whitening is the only intervention that moves uniqueness: ~0 → +0.068 ±
+   0.016 (>2σ above baseline; 1.6× the previous best). Notably +0.068 exceeds
+   the LINEAR mode-uniqueness ceiling (0.024): TopK features are nonlinear and
+   can gate on the identity fingerprints whitening amplifies. The price is
+   steep — matched |r| drops ~21% (MCC 0.406 → 0.320) and matched F1 ~36% —
+   whitening trades tracker strength for specificity.
+3. Leakage does not move (0.84 → 0.88 mean, within run noise) and cannot move
+   from the SAE side: under the uniform per-node shift protocol, the pooling
+   identity (L1-normalized W rows) sends the same α·d to every mode's pooled
+   stream, so specificity is bounded by the frozen decoder's Jacobian
+   homogeneity — a property of the GNN, not the dictionary.
+
+**Synthesis across the three follow-ups.** The eqvar GNN carries the full
+fine-lag content of every mode (FU1: within-window frames decodable at
+|r| ≈ 0.999, PCMCI+ from activations = true-Z), but implements it as ONE
+mode-agnostic amplitude-dynamics operator: no mode-unique linear structure in
+the pooled representation (FU3, uniqueness ceiling 0.024), no mode-factored
+mechanisms in the weights even after the decomposition objective is fixed
+(FU2, pattern-PR 34/64 but zero mode-preferential gain). "Where does the mode
+structure live?" now has a sharp answer: in the *data locations* (W pooling
+restores everything), not in *channels* or *mechanisms*. For GraphCast-side
+work, the actionable transfers are: extract at native cadence (the stride bug
+class), expect global operators rather than per-pattern circuits, and use
+whitening if feature-identity specificity matters more than tracker strength.
+
+## Follow-up session closing — status
+
+| follow-up | bar | outcome |
+|---|---|---|
+| 1 — explain G collapse | localize the 0.853→0.020 drop | **DONE, decisive**: stride-5 cadence artifact; stride-1 activations give F1 0.855 = true-Z; lag structure fully present; DMD-on-acts Spearman 0.976 = pixels; Block G verdict retracted |
+| 2 — VPD objective surgery | raw PR > 3/64 + mode-preferential comps | **bar not met, failure factored**: pattern-PR 1.7–5.0 → 5.2–34.3 (collapse fixed), raw PR ≈ 1 is ImpMin's amplitude hierarchy; no mode-preferential gain → mode-mechanism absence is model-level |
+| 3 — break shared subspace | uniqueness ↑ from ~0, leakage ↓ from 0.81–0.94 | **half-met**: projection = predicted null (shared signal high-rank); ZCA whitening moves uniqueness to +0.068 ± 0.016 (only mover, at MCC/F1 cost); leakage protocol-bounded, immovable from SAE side |
+
+Corrections to earlier verdicts: Block G's "all distortion is
+representation-level" is retracted (FU1); Block A's "collapse is
+method/objective-level" is amended — the *pattern* collapse was method-level
+(fixed by decorrelation), the absence of *mode-level* mechanisms is
+model-level (FU2 + FU3 triangulate a single mode-agnostic operator).
