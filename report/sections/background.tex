@@ -1,0 +1,114 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{GraphCast}
+
+GraphCast~\cite{graphcast} is an encode--process--decode graph network over the
+global atmospheric state. The encoder maps the input fields (atmospheric variables
+on pressure levels plus surface fields, on a latitude--longitude grid) onto a
+multi-scale icosahedral mesh. A 16-layer message-passing processor, with 512 latent
+dimensions per node, propagates information along mesh edges of varying length;
+this is where the learned dynamics live. The decoder maps mesh states back to the
+grid as a 6-hour forecast, and longer forecasts come from feeding the model its own
+output.
+
+Two architectural facts matter later. Rolling the model forward (or teacher-forcing
+it through consecutive observed states) supplies a time axis over its internal
+features, which the causal-discovery route depends on (Sec.~\ref{sec:temporal}).
+And the multi-mesh is heterogeneous: refinement leaves some nodes much better
+connected than others. That heterogeneity is a plausible origin for the
+position-coding (``grid-locked'') features reported in~\cite{macmillan2025}, and it
+is why the synthetic forecaster we build in Sec.~\ref{sec:gnn} uses a heterogeneous
+mesh as well.
+
+\subsection{Sparse autoencoders}
+
+An SAE is an overcomplete dictionary trained to reconstruct a layer's activations
+from a sparse code, in the hope that the dictionary directions are monosemantic
+where the raw neurons are not~\cite{cunningham2023,bricken2023}. The TopK variant
+keeps the $K$ largest feature activations per sample. \citet{macmillan2025}
+obtained their GraphCast features this way, from processor activations. Their
+evaluation stops at feature existence and single-feature interventions; ours
+continues to the causal graph among the features.
+
+\subsection{Causal discovery from time series}
+
+We use three discovery methods whose assumptions barely overlap.
+PCMCI~\cite{runge2019} is the primary one: a condition-selection stage followed by
+momentary-conditional-independence tests, designed for autocorrelated
+high-dimensional time series, returning lagged directed edges with significance
+levels. PCMCI orients only lagged edges ($\tau \ge 1$); its successor
+PCMCI+~\cite{runge2020} also estimates contemporaneous ($\tau = 0$) adjacencies,
+which becomes necessary once dynamics act faster than the sampling interval
+(Sec.~\ref{sec:subsample}). TSCI~\cite{tsci} comes from the
+convergent-cross-mapping tradition and infers causation from reconstructed
+attractor geometry. DYNOTEARS~\cite{dynotears} learns a weighted dynamic Bayesian
+network by acyclicity-constrained continuous optimization. \note{DYNOTEARS runs in
+an isolated venv here due to a numpy/pandas pin; see \texttt{requirements.txt}.}
+Where the three agree we gain confidence; where they disagree, the disagreement
+itself tells us which assumptions bind.
+
+One identifiability fact shapes several experiments below. Under linear dynamics
+with Gaussian noise, the direction of a contemporaneous edge cannot be determined
+from observational data: $X \to Y$ and $Y \to X$ induce the same covariance.
+Shimizu et al.~\cite{shimizu2006} showed that non-Gaussian noise breaks the tie
+(the LiNGAM result: linear, non-Gaussian, acyclic models are fully identifiable,
+because higher-order moments carry directional information). The standard ParCorr
+test inside PCMCI+ uses second-order statistics only and so cannot exploit this;
+Sec.~\ref{sec:subsample} measures what that costs.
+
+\subsection{Parameter decomposition}
+\label{sec:pd-background}
+
+SAEs analyze activations. For the weights we use stochastic parameter
+decomposition (SPD)~\cite{spd}, which writes each weight matrix as a sum of
+rank-one components, $W \approx \sum_c U_{:,c} V_{c,:}$, trained so that the
+components sum to $W$, few are needed for any given input, and each is simple
+(rank one, single layer). ``Needed'' has an operational definition here. A gate
+$g_c(x) \in [0,1]$, learned by randomly masking components and requiring the
+masked network to reproduce the original output, estimates how far component $c$
+can be attenuated at input $x$ before the computation changes. VPD~\cite{vpd}
+hardens the scheme with adversarially chosen masks, so faithfulness must hold
+under worst-case ablations, and adds a frequency penalty that pushes each
+component to be needed rarely---that is, to specialize.
+
+The gate is the reason we adopted this method. It is an ablation, so causal
+importance comes built in; no separate intervention experiment is needed to ask
+whether a component is used. Better still for our purposes, when the decomposed
+layer is applied at every spatial position with shared weights, as in message
+passing, evaluating the gate per position gives each component a spatial usage
+map---and the model contains no per-position parameters that could fake this
+(Sec.~\ref{sec:vpd}).
+
+\subsection{SAVAR}
+
+SAVAR (Spatially Aggregated VAR)~\cite{savar} is a stochastic spatiotemporal
+climate benchmark: a handful of spatial \emph{modes} evolve under a
+vector-autoregressive process with a prescribed causal graph and are rendered onto
+a grid through fixed mode weight maps. The graph among modes is known by
+construction, which is what lets us score a discovery pipeline before trusting it
+on GraphCast.
+
+Our default instantiation, all of it part of the given data-generating process:
+\begin{itemize}[nosep]
+  \item $N=8$ latent modes on a $50\times50$ grid ($L=2500$ pixels).
+  \item Mode maps $W$: eight fixed, $L_1$-normalized, non-overlapping Gaussian
+        blobs in a $3\times3$ layout. $W$ maps modes to pixels;
+        $W^{+}=\mathrm{pinv}(W)$ maps pixels back to modes.
+  \item The causal graph $G$: a hand-designed coefficient set
+        $\{X_i(t-\tau)\!\to\!X_j(t)\}$, each mode carrying an autoregressive term
+        plus cross-edges. It was engineered to contain a hub (X0), a converging
+        node with two parents (X3), a pure sink (X7), a weak lag-2 feedback
+        (X2$\to$X0), negative edges (X0$\to$X5, X2$\to$X3, X3$\to$X7), and a mix of
+        lag-1 and lag-2 structure.
+  \item Dynamics and noise: $Z(t)=\sum_\tau \Phi(\tau)Z(t-\tau)+\xi(t)$,
+        observations $=W^{+}Z+\text{spatial noise}$, with $\lambda=1$, $D_x=I_N$,
+        $D_y=I_L$, giving $\Sigma_y=W^{+}W^{+\top}+I_L$; $T=500$ usable steps after
+        a burn-in of $200$. The 100 realisations share $W$ and $G$ and differ only
+        in noise seed.
+\end{itemize}
+The coefficient dictionary $G$ is the ground truth every method in
+Sec.~\ref{sec:methodcompare} is scored against. This default generator is linear
+and Gaussian; Sec.~\ref{sec:ext} makes it harder in targeted ways (fine temporal
+cadence with heterogeneous lags, nonlinear dynamics, skewed innovations, widely
+spread mode timescales), each aimed at a question the default cannot pose.

@@ -25,11 +25,19 @@ import argparse
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--diurnal", action="store_true")
 _ap.add_argument("--dy005", action="store_true")
+_ap.add_argument("--binary", action="store_true")
 _ap.add_argument("--deseason", action="store_true",
                  help="Analyze deseasonalized activations; expect R²(PC0~cycle)≈0")
 _args = _ap.parse_args()
 
-_base = "sae_data_diurnal" if _args.diurnal else ("sae_data_dy005" if _args.dy005 else "sae_data")
+if _args.diurnal:
+    _base = "sae_data_diurnal"
+elif _args.dy005:
+    _base = "sae_data_dy005"
+elif _args.binary:
+    _base = "sae_data_binary"
+else:
+    _base = "sae_data"
 if _args.deseason:
     _base += "_deseason"
 DATA_DIR = Path(_base)

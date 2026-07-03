@@ -1,0 +1,59 @@
+# M2 — first GNN-relevant run (note §9). Decompose the SHARED message-passing MLPs
+# of layer 0 on the CONVERGED no-emb checkpoint, with a layerwise vector_mlp CI so the
+# per-node gate sees concat([H, agg]) and can form a hub-vs-cell (position-locked) gate.
+# Stochastic masks only here (bring-up): confirm recon converges on the real target
+# before turning on the adversarial PGD term (config_gnn_vpd.yaml = M3 = actual VPD).
+pd:
+  seed: 0
+  n_mask_samples: 1
+  ci_config:
+    mode: layerwise
+    fn_type: vector_mlp
+    hidden_dims: [64]
+  sigmoid_type: leaky_hard
+  decomposition_targets:
+    - module_pattern: layers.0.mlp.0    # SHARED MP MLP in1 (concat[H,agg] 512 -> 256)
+      C: 64
+    - module_pattern: layers.0.mlp.2    # SHARED MP MLP in2 (256 -> 256)
+      C: 64
+  identity_decomposition_targets: null
+  use_delta_component: true
+  batch_size: 8
+  steps: 1500
+  faithfulness_warmup_steps: 150
+  faithfulness_warmup_lr: 0.01
+  faithfulness_warmup_weight_decay: 0.1
+  components_optimizer:
+    lr_schedule:
+      start_val: 2e-3
+      fn_type: cosine
+      warmup_pct: 0.02
+      final_val_frac: 0.1
+  ci_fn_optimizer:
+    lr_schedule:
+      start_val: 2e-3
+      fn_type: cosine
+      warmup_pct: 0.02
+      final_val_frac: 0.1
+  loss_metrics:
+    - type: ImportanceMinimalityLoss
+      coeff: 1e-4
+      pnorm: 2.0
+      beta: 0
+    - type: StochasticReconLayerwiseLoss
+      coeff: 1.0
+    - type: StochasticReconLoss
+      coeff: 1.0
+cadence:
+  train_log_every: 50
+runtime:
+  autocast_bf16: false
+  device: cuda
+  dp: null
+target:
+  checkpoint_path: checkpoints_finecadence/best.pt
+  ny: 50
+  nx: 50
+  k: 3
+data:
+  split_dir: data/splits_finecadence

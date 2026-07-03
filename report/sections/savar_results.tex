@@ -1,0 +1,121 @@
+\section{Validation on SAVAR: Default Setting (Completed Work)}
+\label{sec:savar}
+
+This section establishes, on the default SAVAR instantiation, that the
+SAE$\rightarrow$causal-discovery pipeline recovers true causal structure, and that
+the recovered structure connects to what the forecaster actually computes.
+
+\note{All numbers below are from the current repository. Verify against the latest
+result files before finalizing.}
+
+\subsection{The forecaster reaches the predictability ceiling}
+
+A spatiotemporal CNN trained to forecast the SAVAR observation field attains
+validation RMSE $1.072$, against an oracle floor of $1.061$ and a persistence
+baseline of $1.48$. The forecaster is near-optimal, which makes its representations
+a fair place to ask what a well-performing model learns.
+
+\subsection{Discovery on the latent modes recovers the ground-truth graph}
+
+PCMCI run on the true latent mode series recovers the ground-truth graph with
+precision $71.5\%$, recall $98.4\%$, F1 $82.5\%$, and $100\%$ sign accuracy. So the
+discovery method is adequate for SAVAR dynamics before any SAE enters the picture,
+and this F1 of $0.825$ becomes the ceiling the rest of the pipeline is measured
+against.
+
+\subsection{Discovery on SAE features}
+
+The same discovery run on SAE-feature time series gives precision $0.629$, recall
+$0.789$, F1 $0.695$, sign accuracy $100\%$. Causal structure survives the SAE
+bottleneck with a moderate loss (F1 $0.825 \to 0.695$); the features are imperfect
+proxies for the modes, but causally informative ones.
+
+\subsection{Interpretable features require per-mode SAEs}
+
+A single SAE trained on all modes jointly fails, and the failure has a clean
+explanation: the mode-weighted activations have degenerate PCA structure, with PC0
+carrying ${\approx}86\%$ of the variance as a shared global-activity direction, so
+every mode collapses onto the same feature. Per-mode SAEs repair this. On the
+diurnal forecaster $8/8$ modes align, $5/8$ strongly, $2/8$ monosemantically; on
+the default forecaster $7/8$ align, none strongly. Part of the gap is a hard
+limit---ridge-regression ceilings show some modes are simply not linearly
+recoverable from these activations above $r=0.5$, no matter the SAE. Even so,
+polysemanticity is the rule in every configuration we tried, and
+Sec.~\ref{sec:open} discusses what that means for defining causal variables.
+
+\subsection{Grid-locked features are decodable but causally inert}
+\label{sec:gridlock-cnn}
+
+A spatial SAE on per-pixel activations finds many \emph{grid-locked}
+(position-coding) features. Ablation shows the forecast does not use them: zeroing
+the grid-locked directions removes $23\%$ of the activation norm and moves RMSE by
+$-0.02\%$. The controls make the contrast sharp. Six \emph{content} features
+carrying $1.8\%$ of the norm cost $+10.1\%$ RMSE when ablated; a random set of the
+same size costs $+3.0\%$. Position information sits in the representation without
+being exploited by the computation. GraphCast has geographic-coding features of its
+own~\cite{macmillan2025}, so this distinction will matter there.
+
+\subsection{Forecast importance tracks content and causal out-degree}
+
+Per-feature ablation ranks the content features as the main contributors to
+forecast skill, with the grid-locked features exactly inert, and the ranking holds
+out-of-sample. (The in-sample correlation between content-$R^2$ and importance,
+$+0.43$, vanishes out-of-sample, so we make no quantitative claim there.)
+
+Against the recovered causal graph, forecast importance follows \emph{driving}:
+out-degree correlates with importance at Spearman $+0.78$, out-strength at $+0.76$,
+descendant count at $+0.68$, while the in-flavored centralities (PageRank,
+in-degree, ancestor count) come out negative. Amplitude confounds this (variance
+alone correlates with importance at ${\approx}+0.7$), and partialling it out leaves
+total-degree ($+0.56$) and a weakened out-degree ($+0.36$). Centrality does predict
+importance, but only once amplitude is controlled.
+
+\subsection{Method comparison: PCMCI vs.\ TSCI vs.\ DYNOTEARS}
+\label{sec:methodcompare}
+
+Table~\ref{tab:methods} scores all three discoverers against the same ground-truth
+graph, on the clean latents $Z$ and on the SAE-feature series. The threshold-free
+AUROC/AUPRC on the summary graph are the numbers to compare across methods
+(matching the CausalDynamics-style scoring in \texttt{eval\_common.py}); the
+lag-resolved precision/recall/F1 depend on each method's detection threshold
+($\alpha$ for PCMCI, $|w|$ for DYNOTEARS) and are only loosely comparable.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+Method & Run on & Prec. & Recall & F1 & AUROC & AUPRC \\
+\midrule
+PCMCI     & latent   & 0.715 & 0.984 & 0.825 & ---   & ---   \\
+DYNOTEARS & latent   & 0.839 & 0.995 & \textbf{0.908} & \textbf{1.000} & 0.998 \\
+TSCI      & latent   & 0.214 & 0.499 & 0.299 & 0.500 & 0.277 \\
+\midrule
+PCMCI     & features & 0.629 & 0.789 & \textbf{0.695} & \textbf{0.923} & 0.863 \\
+DYNOTEARS & features & 0.262 & 0.669 & 0.376 & 0.725 & 0.623 \\
+TSCI      & features & 0.215 & 0.502 & 0.301 & 0.502 & 0.262 \\
+\bottomrule
+\end{tabular}
+\caption{Causal-graph recovery on SAVAR (default dataset, 100 realisations). Sign
+accuracy is $100\%$ for the signed methods (PCMCI-ParCorr, DYNOTEARS) on both rows.
+PCMCI-latent AUROC was not computed by the original \texttt{run\_pcmci.py}.}
+\label{tab:methods}
+\end{table}
+
+DYNOTEARS is nearly perfect on the clean latents (AUROC $1.000$) and falls apart
+under the SAE bottleneck (AUROC $0.725$); PCMCI loses the least (AUROC $0.923$).
+Since activation-derived series are precisely the GraphCast setting, PCMCI is the
+method to lean on there. TSCI sits at chance throughout (AUROC ${\approx}0.50$),
+which is what one should expect: the default SAVAR is a linear low-dimensional VAR,
+and there is no nonlinear attractor geometry for cross-mapping to exploit. The
+chance-level result delimits where state-space methods apply; it is not an
+implementation failure.
+
+\subsection{Summary}
+
+On a system with known ground truth, the pipeline works end-to-end. Causal
+structure comes through the SAE bottleneck at a moderate cost, the recovered
+topology relates to forecast importance, and ablation cleanly separates
+representational artifacts from content the forecast depends on. What these
+results cannot yet address---temporal aliasing, mesh-induced position coding,
+identifiability of contemporaneous edges---is the subject of the next section.

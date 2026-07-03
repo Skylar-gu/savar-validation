@@ -44,6 +44,7 @@ from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--dy005", action="store_true", help="Use D_y=0.05·I_L dataset and CNN")
 _ap.add_argument("--diurnal", action="store_true", help="Use diurnal/annual dataset and CNN")
+_ap.add_argument("--binary", action="store_true", help="Use disjoint-binary-mask dataset and CNN")
 _args = _ap.parse_args()
 
 if _args.diurnal:
@@ -54,6 +55,10 @@ elif _args.dy005:
     CKPT_PATH = Path("checkpoints_dy005/best.pt")
     DATA_DIR  = Path("data/realisations_dy005")
     OUT_DIR   = Path("sae_data_dy005")
+elif _args.binary:
+    CKPT_PATH = Path("checkpoints_binary/best.pt")
+    DATA_DIR  = Path("data/realisations_binary")
+    OUT_DIR   = Path("sae_data_binary")
 else:
     CKPT_PATH = Path("checkpoints/best.pt")
     DATA_DIR  = Path("data/realisations")

@@ -1,0 +1,207 @@
+\section{Extensions: Aliasing, Mesh Heterogeneity, and Parameter Decomposition}
+\label{sec:ext}
+
+The validation above used the default linear-Gaussian generator and a CNN
+forecaster, and several GraphCast-relevant questions cannot even be posed in that
+setting. Discovery ran at the cadence the dynamics are defined on, so nothing ever
+aliased. A translation-equivariant CNN has no per-position parameters and no
+privileged locations, so grid-locked features cannot arise in it, whatever the
+data. And linear-Gaussian dynamics leave contemporaneous directions unidentifiable
+in principle while pinning the forecaster's representation to a nearly low-rank
+subspace. The experiments in this section relax each of these constraints.
+
+\subsection{A harder generator}
+\label{sec:finecadence}
+
+The fine-cadence generator (\texttt{generate\_finecadence.py}; 100 realisations,
+$T=2400$) keeps the eight-mode edge set of the default graph and changes the rest.
+Cross-edges get heterogeneous lags $\ell \in \{1,2,3,4,6\}$ in fine-step units. The
+dynamics gain a saturating autoregression and a bilinear interaction term
+($\alpha=0.5$, $\beta=0.15$). Innovations become skew-normal (shape $\alpha=4$,
+standardized to unit variance, so VAR stationarity is untouched). The skewness is
+there for a reason: it is the LiNGAM condition under which contemporaneous
+directions become identifiable in principle (Sec.~\ref{sec:background}), so this
+generator can tell us whether our discovery methods actually cash in on that
+identifiability.
+
+\subsection{Subsampling and aliased edges: PCMCI+ vs.\ PCMCI}
+\label{sec:subsample}
+
+Observing the fine-cadence system at stride $s$ turns a ground-truth lag $\ell$
+into a coarse lag $\lfloor \ell/s \rfloor$, so every edge with $\ell < s$ aliases
+to a contemporaneous ($\tau=0$) dependency. Plain PCMCI with $\tau_{\min}=1$ has no
+way to represent such an edge; its recall on aliased edges is zero before it sees
+any data. Table~\ref{tab:subsample} shows the sweep over strides for PCMCI+
+($\tau_{\min}=0$) and PCMCI ($\tau_{\min}=1$) on the latent modes (40 realisations,
+$\alpha=0.05$).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{cccccc}
+\toprule
+$s$ & $T$ & GT edges (lag/contemp.) & PCMCI+ contemp.\ F1 & PCMCI+ overall F1 &
+PCMCI overall F1 \\
+\midrule
+1 & 2400 & 12 / 0 & ---   & 0.776 & 0.593 \\
+2 & 1200 &  9 / 3 & 0.627 & 0.587 & 0.457 \\
+3 &  800 &  6 / 6 & 0.491 & 0.444 & 0.308 \\
+4 &  600 &  4 / 8 & 0.376 & 0.346 & 0.192 \\
+\bottomrule
+\end{tabular}
+\caption{Subsampling sweep on the fine-cadence dataset. ``GT edges'' counts
+ground-truth edges that remain lagged vs.\ alias to $\tau=0$ at stride $s$.
+Contemporaneous F1 is computed on the undirected adjacency. At $s=1$ the PCMCI+
+lagged F1 is $0.825$, matching the default-dataset ceiling of
+Sec.~\ref{sec:savar}.}
+\label{tab:subsample}
+\end{table}
+
+PCMCI+ recovers a substantial fraction of the aliased edges (contemporaneous F1
+$0.38$--$0.63$) while plain PCMCI's overall F1 collapses with aliasing, $0.593$
+down to $0.192$. Whenever dynamics might act faster than the sampling
+interval---and at 6-hour steps on the real atmosphere they certainly do---PCMCI+
+is the tool. Its remaining weakness is orientation. Most recovered $\tau=0$ edges
+come back unoriented (orientation rate $0.08$--$0.30$), even though the skewed
+innovations make the directions identifiable in principle. ParCorr is a Gaussian
+test statistic; the directional information lives in higher moments it never
+looks at. Bolting a LiNGAM-style orientation step onto PCMCI+'s adjacencies is
+the obvious follow-up and has not been done yet (Sec.~\ref{sec:open}).
+
+\subsection{A GraphCast-faithful forecaster}
+\label{sec:gnn}
+
+For grid-locked features to be possible at all, the forecaster needs privileged
+locations. We replaced the CNN with a message-passing GNN
+(\texttt{train/gnn\_forecaster.py}) built like GraphCast's processor in miniature:
+a mesh over the $50\times50$ grid with local 8-neighbour edges everywhere plus
+long-range edges among a lattice of hub nodes, node degrees running from 3 to 32,
+and message-passing MLPs shared across all nodes. The mesh is the only source of
+positional asymmetry. The SAVAR generator supplies none: the mode layout is
+content, tied to the causal graph, and the observation noise is spatially
+homogeneous. Any hub-tied structure in the trained model is therefore attributable
+to the mesh.
+
+An early version of this model also had a learnable per-node embedding, added on
+the reasoning that a CNN lacks per-position parameters and the GNN should have
+them. We removed it. GraphCast's processor has no such lookup table, and giving
+position a parametric home of its own would have manufactured the grid-lock
+phenomenon we were trying to observe emerging from the mesh. All results below use
+the model without it.
+
+The trained GNN reaches validation RMSE $0.4295$ on the fine-cadence one-step
+task, against $0.4591$ for predicting the grand mean: $R^2 = 0.125$. This is a
+weak-signal task by construction (the one-step ceiling at the mode level is
+$R^2 \approx 0.20$; Sec.~\ref{sec:homog}), so throughout this section we read the
+structure of the interpretability results and put little weight on absolute effect
+sizes.
+
+\subsection{Per-mode SAEs on the GNN}
+\label{sec:gnn-sae}
+
+We repeated the per-mode SAE pipeline of Sec.~\ref{sec:savar} on the GNN's node
+states after the final message-passing layer (mode-weighted pooling, eight
+independent TopK SAEs, ridge ceilings measured out-of-fold). The picture is the
+CNN's, only sharper. Alignment drops from $7/8$ modes to $2/8$ (X1 and X2), still
+with no strong alignment and no monosemantic feature anywhere. The global-activity
+direction that dominated the CNN's pooled activations at ${\approx}86\%$ of
+variance dominates the GNN's at $88$--$92\%$, and the linear decoding ceilings
+shrink accordingly ($0.36$--$0.50$, versus $0.36$--$0.59$ for the CNN). The SAEs
+themselves are not the bottleneck; they still reach $66$--$81\%$ of ceiling. No
+feature is mode-specific (specificity $\le +0.07$), and modes X1 and X6 literally
+share their best feature. Message passing over the heterogeneous mesh concentrates
+node state onto global system activity even more aggressively than convolution
+does, and mode-specific structure never surfaces in the representation. The
+parameter-level analysis below says something similar about the hub structure.
+
+\subsection{Parameter decomposition of the message-passing MLPs}
+\label{sec:vpd}
+
+We applied VPD to the frozen GNN: both linear maps of all four message-passing
+MLPs, $C=64$ rank-one components each, per-node gates, stochastic plus adversarial
+(PGD) masks, frequency-minimality on. Reconstruction converged: masked-forward
+MSE to the frozen model's output of ${\approx}2\times10^{-3}$ under stochastic
+masks, ${\approx}3.5\times10^{-2}$ under worst-case masks, faithfulness residual
+${\approx}8\times10^{-4}$. The decomposition reproduces the forecaster even under
+worst-case node-level ablations, which is the property that licenses reading the
+gates causally.
+
+Each component's gate map (mean gate per node, reshaped to $50\times50$) is
+summarized by its \emph{hub contrast} (mean gate on hub nodes minus background),
+its \emph{mode contrast} (mean gate on the eight mode blobs minus background), and
+an ablation effect (rise in reconstruction error when the component is fully
+masked). Table~\ref{tab:vpd} gives per-layer means.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+Layer & Hub contrast & Mode contrast & Abl.\ mean ($\times10^{-3}$) &
+Abl.\ max ($\times10^{-3}$) & Mode-dominant \\
+\midrule
+0, MLP in   & \textbf{0.479} & 0.369 & 1.86 & 17.3 & 19/64 \\
+0, MLP out  & \textbf{0.258} & 0.113 & 0.62 &  2.1 & 18/64 \\
+1, MLP in   & \textbf{0.441} & 0.327 & 3.08 & 37.1 & 21/64 \\
+1, MLP out  & \textbf{0.222} & 0.149 & 0.20 &  0.6 & 26/64 \\
+2, MLP in   & 0.151 & \textbf{0.340} & 2.40 & 25.1 & 50/64 \\
+2, MLP out  & 0.006 & \textbf{0.227} & 0.10 &  1.2 & 48/64 \\
+3, MLP in   & 0.118 & \textbf{0.365} & 1.24 &  8.2 & 48/64 \\
+3, MLP out  & 0.041 & 0.049 & 0.03 &  0.9 & 41/64 \\
+\bottomrule
+\end{tabular}
+\caption{VPD gate structure per decomposed matrix (64 components each).
+``Mode-dominant'' counts components whose gate is at least as mode-locked as
+hub-locked. Bold marks the larger of the two contrasts.}
+\label{tab:vpd}
+\end{table}
+
+Depth organizes the gates. In layers 0--1 they concentrate on the mesh hubs: hub
+contrast exceeds mode contrast, and only 19--26 of 64 components are more mode-
+than hub-locked. By layers 2--3 the pattern has inverted, with 48--50 of 64
+components tracking the SAVAR mode blobs. Early mechanisms lock to the mesh, late
+mechanisms to content. Nearly all of this structure sits in the first sublayer of
+each MLP, whose gate input includes the neighbour-aggregated state; that is enough
+to tell a hub from an ordinary cell without any positional encoding.
+
+The gates also settle the grid-lock question, this time from inside a single
+object. Across early-layer components, hub contrast correlates negatively with
+ablation effect: $-0.48$ at layer 0, $-0.37$ at layer 1. The most hub-locked
+mechanisms are the ones the forecast depends on least. Section~\ref{sec:gridlock-cnn}
+reached the same conclusion for the CNN's SAE features, but needed a separate
+ablation experiment to get there; here the gate is ablation-defined, so
+``position-locked'' and ``causally inert'' are read off the same map. No time
+axis is involved either, so the aliasing issues of Sec.~\ref{sec:subsample} never
+arise. For grid-lock specifically, the parameter route is simply the better
+instrument.
+
+Caveats: the ablation effects are small in absolute terms everywhere (means of
+$1$--$3\times10^{-3}$), as expected against a weak-signal target, so the depth
+gradient and the hub--ablation correlation are claims about structure, and we make
+no claim about magnitudes. The components are also far from specialized: every
+component's gate covers all eight mode blobs almost equally (coefficient of
+variation ${\approx}0.05$). Why nothing specializes is the next question.
+
+\subsection{Why nothing specializes}
+\label{sec:homog}
+
+The GNN's margin over the grand-mean predictor is thin ($R^2 = 0.125$), and its
+behaviour is essentially damped persistence: correlation $0.78$ with the last
+input frame, effective gain ${\approx}0.27$. The generator explains this. The
+one-step mode-forecast ceiling is only $R^2 \approx 0.20$, and the eight modes are
+dynamically near-interchangeable (variance ratio $1.1$, self-coupling
+coefficients all within $[0.30, 0.55]$, cross-coupling worth a mere $0.03$ of
+$R^2$). For such a system the optimal one-step forecaster is close to one shared
+shrinkage toward the mean, applied identically everywhere. Mode-specific
+circuitry would buy nothing, and the model built none; the SAE features of
+Sec.~\ref{sec:gnn-sae} and the VPD components of Sec.~\ref{sec:vpd} are
+homogeneous because the task is.
+
+This account makes a testable prediction: give the modes genuinely different
+dynamics and specialization should appear. A modified generator
+(\texttt{generate\_hetdynamics.py}) widens the self-coupling range to
+$[0.15, 0.92]$, a ${\sim}23\times$ spread in autocorrelation timescale, with an
+equal-variance control to separate timescale heterogeneity from amplitude. The
+three-way comparison (baseline, heterogeneous dynamics, equal-variance control)
+through the full GNN and SAE pipeline is running at the time of writing.
+\todo{Add heterogeneous-dynamics results when the runs complete.}
