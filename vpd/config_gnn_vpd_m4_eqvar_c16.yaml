@@ -1,0 +1,98 @@
+# Block A SECONDARY (agent session 2026-07-03): same eqvar checkpoint, C=16 and
+# ImportanceMinimalityLoss coeff x30 (1e-4 -> 3e-3) — tests whether config
+# (loss balance / overcapacity), not data, was suppressing component
+# differentiation. Everything else identical to config_gnn_vpd_m4_eqvar.yaml.
+# Block A (agent session 2026-07-03) — M4 VPD config re-pointed at the
+# hetdynamics_eqvar checkpoint + dataset. Identical to config_gnn_vpd_m4.yaml
+# (the p-0625f7dd run) except target.checkpoint_path and data.split_dir.
+# Decisive experiment: do components differentiate when per-mode timescale
+# spread (22.8x) gives the network separable mechanisms to learn?
+pd:
+  seed: 0
+  n_mask_samples: 1
+  ci_config:
+    mode: layerwise
+    fn_type: vector_mlp
+    hidden_dims: [64]
+  sigmoid_type: leaky_hard
+  decomposition_targets:
+    - module_pattern: layers.0.mlp.0
+      C: 16
+    - module_pattern: layers.0.mlp.2
+      C: 16
+    - module_pattern: layers.1.mlp.0
+      C: 16
+    - module_pattern: layers.1.mlp.2
+      C: 16
+    - module_pattern: layers.2.mlp.0
+      C: 16
+    - module_pattern: layers.2.mlp.2
+      C: 16
+    - module_pattern: layers.3.mlp.0
+      C: 16
+    - module_pattern: layers.3.mlp.2
+      C: 16
+  identity_decomposition_targets: null
+  use_delta_component: true
+  batch_size: 8
+  steps: 5000
+  faithfulness_warmup_steps: 200
+  faithfulness_warmup_lr: 0.01
+  faithfulness_warmup_weight_decay: 0.0
+  components_optimizer:
+    lr_schedule:
+      start_val: 2e-3
+      fn_type: cosine
+      warmup_pct: 0.02
+      final_val_frac: 0.1
+    grad_clip_norm: 1.0
+  ci_fn_optimizer:
+    lr_schedule:
+      start_val: 2e-3
+      fn_type: cosine
+      warmup_pct: 0.02
+      final_val_frac: 0.1
+  loss_metrics:
+    - type: ImportanceMinimalityLoss      # minimality + FREQUENCY-minimality (VPD knob)
+      coeff: 3e-3
+      pnorm: 2.0
+      beta: 0.5                           # >0 => superlinear frequency penalty
+      p_anneal_start_frac: 0.0
+      p_anneal_final_p: 0.4
+      p_anneal_end_frac: 1.0
+      eps: 1e-12
+    - type: StochasticReconSubsetLoss     # stochastic subset masks
+      coeff: 0.5
+      routing:
+        type: uniform_k_subset
+    - type: PersistentPGDReconLoss        # ADVERSARIAL worst-case masks — core of VPD
+      coeff: 0.5
+      optimizer:
+        type: adam
+        beta1: 0.5
+        beta2: 0.99
+        eps: 1e-8
+        lr_schedule:
+          start_val: 0.01
+          warmup_pct: 0.025
+          final_val_frac: 1.0
+          fn_type: constant
+      scope:
+        type: per_batch_per_position      # per NODE for the GNN
+      use_sigmoid_parameterization: false
+      n_warmup_steps: 2
+    - type: FaithfulnessLoss              # Delta-faithfulness  Sum||W - Sum UV||^2
+      coeff: 1e7
+cadence:
+  train_log_every: 100
+runtime:
+  autocast_bf16: false
+  device: cuda
+  dp: null
+target:
+  checkpoint_path: checkpoints_hetdynamics_eqvar/best.pt
+  ny: 50
+  nx: 50
+  k: 3
+data:
+  split_dir: data/splits_hetdynamics_eqvar

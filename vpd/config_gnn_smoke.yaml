@@ -1,0 +1,54 @@
+# M1 smoke test: validate the param-decomp adapter on a FROZEN (untrained) MeshGNN.
+# Decompose decoder.0 only, scalar (mlp) CI, stochastic masks + faithfulness warmup.
+# Success = reconstruction loss → ~0 (the wrapped model reproduces the frozen output).
+# This is SPD-style (stochastic); the adversarial VPD terms come in at M3.
+pd:
+  seed: 0
+  n_mask_samples: 1
+  ci_config:
+    mode: layerwise
+    fn_type: mlp
+    hidden_dims: [16]
+  sigmoid_type: leaky_hard
+  decomposition_targets:
+    - module_pattern: decoder.0
+      C: 32
+  identity_decomposition_targets: null
+  use_delta_component: true
+  batch_size: 8
+  steps: 300
+  components_optimizer:
+    lr_schedule:
+      start_val: 2e-3
+      fn_type: constant
+      warmup_pct: 0.0
+  ci_fn_optimizer:
+    lr_schedule:
+      start_val: 2e-3
+      fn_type: constant
+      warmup_pct: 0.0
+  faithfulness_warmup_steps: 100
+  faithfulness_warmup_lr: 0.01
+  faithfulness_warmup_weight_decay: 0.1
+  loss_metrics:
+    - type: ImportanceMinimalityLoss
+      coeff: 1e-5
+      pnorm: 2.0
+      beta: 0
+    - type: StochasticReconLayerwiseLoss
+      coeff: 1.0
+    - type: StochasticReconLoss
+      coeff: 1.0
+cadence:
+  train_log_every: 25
+runtime:
+  autocast_bf16: false
+  device: cuda
+  dp: null
+target:
+  checkpoint_path: null
+  ny: 50
+  nx: 50
+  k: 3
+data:
+  split_dir: data/splits_finecadence

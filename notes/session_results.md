@@ -40,10 +40,41 @@ differentiate. There is only mild late-layer movement (layers_2_mlp_2 PR
 more dedicated components at the output end).
 
 **Secondary run** (config test: C=16, ImportanceMinimality ×30 — the loss-balance
-amplifier flagged in results_gnn §5): launched
-(`vpd/config_gnn_vpd_m4_eqvar_c16.yaml`); diagnostics below when complete.
+amplifier flagged in results_gnn §5). Run `out/runs/p-d67e2ebb` (5000 steps).
+Results: `results/vpd_eqvar_redundancy_c16.npy`.
 
-*(section to be completed when the C=16 run finishes)*
+| module | PR (/16) | med pairwise r | med blob CV | #mode-pref (/16) | sp(φ, ent) |
+|---|---|---|---|---|---|
+| layers_0_mlp_0 | 1.23 | 0.60 | 0.091 | 0 | +0.37 |
+| layers_0_mlp_2 | 1.09 | 0.53 | 0.119 | 3 | −0.16 |
+| layers_1_mlp_0 | 1.18 | 0.15 | 0.146 | 6 | −0.62 |
+| layers_1_mlp_2 | 1.17 | 0.40 | 0.160 | 7 | −0.35 |
+| layers_2_mlp_0 | 1.15 | 0.19 | 0.102 | 5 | −0.10 |
+| layers_2_mlp_2 | 1.14 | 0.31 | 0.230 | 10 | −0.26 |
+| layers_3_mlp_0 | 1.21 | 0.33 | 0.358 | 4 | +0.56 |
+| layers_3_mlp_2 | 1.01 | 0.44 | **0.851** | 12 | +0.50 |
+
+Config amplification does NOT fix the participation ratio: PR stays 1.01–1.23
+even with 4× fewer components and 30× stronger minimality pressure. What it
+*does* change is where the (single) shared gate pattern sits: in the last MP
+MLP the blob-usage CV explodes to 0.85 with 12/16 components mode-preferential
+and dominant-mode counts piled on the slowest modes ([2,1,0,0,1,0,**6,6**] for
+modes X0..X7) — i.e. all components jointly concentrate on the slow-mode blobs,
+but they do not differentiate *from each other* (PR 1.01 there — literally one
+pattern). The positive Spearman(φ, blob-entropy) in layer 3 (+0.56/+0.50, sign
+flip vs finecadence) says slow modes attract the gates, matching the SAE
+finding that slow-mode content is what the network makes decodable.
+
+**BLOCK A VERDICT: data-problem hypothesis NOT confirmed — the evidence now
+points at the method/objective.** A 22.8× timescale spread (primary) plus a
+4×-fewer-components / 30×-minimality config (secondary) both leave every
+decomposed module at PR ≈ 1: VPD's minimality objective collapses to one
+shared mechanism on this GNN regardless of whether the data contains separable
+mechanisms. The residual mode signal (late-layer blob concentration, slow-mode
+preference) shows the *representation* differentiates — the decomposition just
+doesn't track it. Follow-up candidates: per-layer C, gate regularization that
+penalizes pairwise gate correlation directly, or SPD/APD-style stochastic
+masking instead of ImportanceMinimality.
 
 ---
 

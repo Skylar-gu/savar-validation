@@ -49,3 +49,10 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
   Sensitivity run (24 steps, 480 windows): identical edge sets -> robust, not a
   budget artifact; e-folding fit window-dependent (rollout damping uniform
   beyond ~10 steps). results/impulse_response{,_s24}.npy. Committing Block B.
+- **[05:25] Block A secondary DONE -> Block A COMPLETE.** C=16 IM x30 run
+  `out/runs/p-d67e2ebb` (note: out/ root, not vpd_out/). PR still 1.01-1.23/16
+  across all 8 modules -> config amplification does not fix collapse. But
+  layers_3_mlp_2 blobCV 0.851 (baseline 0.04), 12/16 mode-pref, dominant modes
+  piled on X6/X7, sp(phi,ent)=+0.50: the single shared gate concentrates on
+  slow-mode blobs. VERDICT: data-problem hypothesis NOT confirmed; collapse is
+  method/objective-level. results/vpd_eqvar_redundancy_c16.npy. Committing A.
