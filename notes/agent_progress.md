@@ -106,3 +106,11 @@ Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_r
   0.595 (was 0.020). DMD on activation streams Spearman 0.976 = pixel-DMD.
   VERDICT: activations do NOT lack lag structure; Block G's
   "representation-level loss" retracted. results/activation_collapse_explained.npy.
+- **[FU2 DONE] VPD objective surgery.** Added GateDecorrelationLoss to
+  param-decomp (patch: vpd/param_decomp_gate_decorrelation.patch); M4 eqvar +
+  coeff 1.0 (p-50fb4988) and 10.0 (p-87fe946d). med pairwise gate-map |r|
+  0.81->0.27 (L0), pattern-level PR 1.7-5.0 -> 5.2-34.3 among substantive
+  comps; raw PR still ~1.1-1.45 (amplitude hierarchy = ImpMin's job); mode
+  preference does NOT rise. Success bar not met; failure factored: pattern
+  collapse = method-level (fixed), absence of mode mechanisms = model-level.
+  results/vpd_eqvar_redundancy_decor{,_c10}.npy.

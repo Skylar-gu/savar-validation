@@ -526,3 +526,76 @@ NOT doomed by missing lag structure — the activation pathway carries the full
 graph; what they fail at (uniqueness, per-mode surgery) is mode *identity*, not
 lag content. (3) All future activation-side causal work must extract at
 stride 1 (or match τ units to the extraction stride).
+
+## Follow-up 2 — VPD objective surgery: explicit anti-redundancy term
+
+**Setup.** New loss metric `GateDecorrelationLoss` added to param-decomp
+(`param_decomp/metrics/gate_decorrelation.py` + registration; full diff in
+`vpd/param_decomp_gate_decorrelation.patch` — param-decomp is its own repo,
+left uncommitted there): per decomposed module, flatten the upper-leaky CI
+gates over (batch, node) → (N, C), penalize mean squared off-diagonal Pearson
+correlation between components; summed over the 8 modules. Config
+`vpd/config_gnn_vpd_m4_eqvar_decor.yaml` = Block A's M4 eqvar config + the new
+term. Runs: coeff 1.0 → `vpd_out/runs/p-50fb4988`; coeff 10.0 →
+`vpd_out/runs/p-87fe946d` (5000 steps each). Results:
+`results/vpd_eqvar_redundancy_decor{,_c10}.npy`.
+
+**Coeff 1.0** (same columns as Block A; baseline p-6b9ba3ba in parentheses):
+
+| module | PR (/64) | med pairwise \|r\| | med blob CV | #pref (/64) | sp(φ,ent) |
+|---|---|---|---|---|---|
+| layers_0_mlp_0 | 1.08 (1.08) | **0.274 (0.81)** | 0.000 (0.038) | 0 (0) | −0.06 |
+| layers_0_mlp_2 | 1.15 (1.18) | 0.188 (0.54) | 0.032 | 6 (1) | −0.08 |
+| layers_1_mlp_0 | 1.17 (1.15) | 0.092 (0.03) | 0.000 | 0 (6) | −0.33 |
+| layers_1_mlp_2 | 1.26 (1.27) | 0.065 (0.24) | 0.034 | 3 (7) | −0.17 |
+| layers_2_mlp_0 | 1.32 (1.31) | 0.042 (0.24) | 0.001 | 6 (4) | −0.04 |
+| layers_2_mlp_2 | 1.45 (1.54) | 0.040 (0.35) | 0.091 | 11 (12) | +0.05 |
+| layers_3_mlp_0 | 1.31 (1.27) | 0.039 (0.54) | 0.102 | 6 (6) | +0.13 |
+| layers_3_mlp_2 | 1.39 (1.29) | 0.022 (0.36) | 0.307 (0.229) | 21 (14) | +0.26 |
+
+Training cost: final StochasticReconSubset 4.6e-3 (baseline 1.9e-3), PGD recon
+5.9e-2 (4.1e-2), Faithfulness identical (9.8e-4) — the decorrelated
+decomposition still reconstructs the frozen GNN. GateDecor 0.476 → 0.007.
+
+**The PR/pattern decomposition (key to reading the table).** Raw PR is
+amplitude-weighted; it confounds *pattern sharing* with *amplitude
+concentration*. Splitting them (row-normalized gate maps, and restricted to
+substantive components with centered-map norm > 1):
+
+| module | PR_pattern base → decor | n_subst base → decor | #pref(subst) base → decor |
+|---|---|---|---|
+| layers_0_mlp_0 | 1.71 → 5.16 | 59 → 28 | 0 → 0 |
+| layers_1_mlp_2 | 3.18 → 15.59 | 64 → 33 | 7 → 1 |
+| layers_2_mlp_2 | 4.05 → 24.47 | 64 → 34 | 12 → 4 |
+| layers_3_mlp_0 | 3.86 → 26.38 | 64 → 36 | 6 → 5 |
+| layers_3_mlp_2 | 4.96 → 34.31 | 64 → 42 | 14 → 8 |
+
+**Coeff 10.0** pushes further in the same direction and over-suppresses:
+med|r| 0.002–0.058, but substantive components collapse to 10–17/64,
+pattern-PR among them 3.9–13.9, and recon degrades (stochastic 1.4e-2 = 7×
+baseline, PGD 1.3e-1 = 3×). The full-64 #pref counts (up to 32/64, layer-3
+blob CV 0.946) are carried by near-dead low-amplitude components. Coeff 1.0 is
+the operating point.
+
+**Outcome vs the success bar (raw PR > 3/64 with mode-preferential
+components): NOT met — but the failure is now cleanly factored.**
+1. The anti-redundancy term does exactly its job: the single shared gate
+   pattern (median pairwise map |r| 0.81) splits into tens of *distinct*
+   spatial patterns — pattern-level PR jumps from 1.7–5.0 to 5.2–34.3 among
+   substantive components. The Block-A "one pattern copied 64×" symptom is
+   method-fixable.
+2. Raw PR stays ≈ 1.1–1.45 because it is dominated by the amplitude hierarchy
+   that ImportanceMinimality *by design* imposes (few high-usage components);
+   decorrelation acts on patterns, not magnitudes — the two objectives are
+   orthogonal, and no decorrelation coefficient trades one into the other
+   (coeff 10 kills components instead).
+3. The decisive negative: the newly distinct patterns are NOT mode-mechanisms.
+   Mode-preferential counts among substantive components do not rise (0–8 vs
+   baseline 0–14); dominant-mode counts stay spread; sp(φ, entropy) ≈ 0.
+   Given Follow-up 3's finding that pooled activations carry ~no mode-unique
+   linear structure (readout uniqueness ≤ 0.024), the parsimonious reading is
+   that the GNN's computation genuinely does not factor into per-mode
+   mechanisms — it implements one mode-agnostic amplitude-dynamics operator,
+   and VPD (now de-redundified) correctly reports that. The Block-A verdict
+   should be amended: the *pattern collapse* was method-level; the *absence of
+   mode-level mechanisms* looks model-level, not method-level.
