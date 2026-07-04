@@ -749,3 +749,72 @@ Mixture baseline is flat at 0.703–0.705 for D_sub at every Δφ.
 
 **Verdict: GATE PASS** — proceed with the full de-aliasing battery (T1–T5) on
 the moving-mechanism testbed. Twin-null and dose-response anchors established.
+
+## Generator + plain-net train (MOVE=place)
+
+`data_gen/generate_movmech.py` (fork of generate_hetdynamics): mechanism
+identity = (φ_k, parents) IDENTICAL every realisation (eqvar innovation
+scaling); blob CENTRE drawn fresh per realisation, rejection-sampled disjoint
+(max pairwise footprint Jaccard 0.0). Field generated on a 100×100 FINE grid,
+observed through D_sub (decimate → 50×50, aliasing, primary) and D_avg (2×2
+mean → 50×50, low-pass control). Two fine sub-sources per parent blob,
+CO-LOCATED (checker vs x-stripe patterns at exact Nyquist → both alias to the
+same +envelope under D_sub, an exact spatial collision; both annihilated
+exactly under D_avg). Sub dynamics: fast φ=0.30 (parent j, lag1) / slow φ=0.90
+(parent (j+3)%8, lag2); twin blob 7 = both subs φ=0.60 same parent (T4 null).
+`Z_fine` (16, T) = injected sub amplitude saved per realisation, corr 1.000 to
+the fine-grid measured readout. 100 realisations, T=2400. Split 70/15/15
+(`split_movmech.py`; D_sub + D_avg splits both built).
+
+Plain MeshGNN (gcn, emb0, N_MP=4, hidden=256), 15 epochs, batch 64, on D_sub
+coarse obs → `checkpoints_movmech_place/`. Final val corr 0.594, RMSE 0.642.
+Per-mode ridge |r| ceiling of the pooled activations (φ-graded, forecast
+skill): X0 0.107 → X7 0.730.
+
+## P1/P2/P3 — the left-vs-right test on the PLAIN net
+
+`sae/movmech_position_invariance.py`, `results/movmech_posinv_place_plain.npy`.
+Pooled activation feat[r,k]=W[r,k]·H (W follows the moving blob); readout
+Z_k ← feat fit on realisations where blob k is LEFT (fine-x<50), tested on
+held-out LEFT (in-region) and RIGHT (out-of-region); symmetrised.
+
+| mech | φ-ceil | P1 in R² | P1 out R² | P1 gap | P2 shuffle gap |
+|---|---|---|---|---|---|
+| X0 | 0.11 | −0.006 | −0.011 | +0.005 | −0.000 |
+| X1 | 0.24 | 0.026 | 0.036 | −0.010 | +0.016 |
+| X2 | 0.34 | 0.098 | 0.091 | +0.007 | −0.006 |
+| X3 | 0.44 | 0.176 | 0.163 | +0.013 | +0.005 |
+| X4 | 0.54 | 0.270 | 0.278 | −0.008 | +0.006 |
+| X5 | 0.64 | 0.389 | 0.405 | −0.016 | +0.004 |
+| X6 | 0.72 | 0.504 | 0.515 | −0.012 | +0.006 |
+| X7 | 0.73 | 0.515 | 0.522 | −0.008 | +0.007 |
+| **mean** | | **0.246** | **0.250** | **−0.004** | **+0.005** |
+
+**P3 shift-equivariance** (roll input δ px, re-pool at shifted W;
+corr(feat_shift, feat_orig)): **1.00 / 0.999 / 0.999 / 0.998** at δ=1/2/4/8,
+all 8 mechanisms.
+
+**Reading — the v2 prediction is INVERTED, cleanly.**
+1. **No left-vs-right gap** (mean P1 gap −0.004, identical to the P2 shuffle
+   gap +0.005). A location code would collapse out-of-region; it does not. The
+   absolute recovery is φ-graded and equals the forecast-skill ceiling
+   (out-R² tracks the ridge |r|² per mode), i.e. the ONLY limiter is intrinsic
+   predictability, not a where-vs-what confound.
+2. **P3 = 1.00**: the representation is (near-)perfectly translation-equivariant
+   — a shifted blob yields a cleanly shifted internal map, so there is **no
+   internal aliasing** for A0/blur-pool to fix (Zhang's premise does not apply
+   to this GCN backbone; unlike the strided CNNs the vision papers studied, the
+   symmetric-normalised message passing + blob-tracking W-pool is equivariant by
+   construction, broken only weakly at the stride-5 hub lattice — invisible here).
+3. Therefore the pooled per-mechanism code is **already location-invariant**:
+   moving the mechanisms + an equivariant backbone factor out "where" for free.
+   The abstraction the hypothesis wanted is present at the pooled level — but
+   achieved by equivariance, not by a learned slot/what-code, and the pooling is
+   still handed the ground-truth moving footprint (it selects WHERE to read; the
+   CONTENT read is position-invariant).
+
+**Verdict vs v2 scorecard.** "plain network fails left-vs-right" — NOT observed
+(gap≈0). "A0 smoothing passes / plain fails" — pre-empted: P3=1.0 shows no
+aliasing bug exists. Prediction for the sweep: A0/A1/A2 should NOT move P1,
+because the plain net already has no position gap. Running the sweep to confirm
+(the main result), per spec.

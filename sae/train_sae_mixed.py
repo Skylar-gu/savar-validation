@@ -127,11 +127,28 @@ acts_full = np.load(DATA_DIR / "activations_full.npy")   # (100, 8, T, 256)
 n_real, n_modes, t_eff, d = acts_full.shape
 assert d == INPUT_DIM
 
+# Space-time SAE (v2 T6, arXiv:2604.03919): stack SAE_SPACETIME consecutive
+# time-steps of each pooled per-mode activation so a MOVING pattern's temporal
+# signature is one atom (a per-frame SAE cannot represent it). input_dim = ST*256.
+ST = int(os.environ.get("SAE_SPACETIME", 1))
+
+def _flatten(a):   # a: (R, 8, T, 256) -> (samples, ST*256)
+    if ST == 1:
+        return a.reshape(-1, d).astype(np.float32)
+    R, M, T, D = a.shape
+    w = np.stack([a[:, :, t:t+ST] for t in range(T - ST + 1)], axis=2)  # (R,M,T',ST,D)
+    return w.reshape(-1, ST * D).astype(np.float32)
+
 n_val   = max(1, int(n_real * VAL_FRAC))
 n_train = n_real - n_val
+if ST > 1:
+    INPUT_DIM = ST * d
+    _CKPT_NAME = _CKPT_NAME.replace(".pt", f"_st{ST}.pt")
+    _HIST_NAME = _HIST_NAME.replace(".npy", f"_st{ST}.npy")
+    print(f"  SPACE-TIME SAE: ST={ST}  input_dim={INPUT_DIM}")
 
-train_x = acts_full[:n_train].reshape(-1, d).astype(np.float32)   # (~340K, 256)
-val_x   = acts_full[n_train:].reshape(-1, d).astype(np.float32)
+train_x = _flatten(acts_full[:n_train])
+val_x   = _flatten(acts_full[n_train:])
 
 # single GLOBAL normalisation — no mode information used
 mean_g = train_x.mean(0)
