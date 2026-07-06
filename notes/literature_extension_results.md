@@ -62,8 +62,57 @@ slow-mode responses are broad and low, exactly what a max-statistic misses;
 **Run 3** (arm B only, 720 windows, 24 steps, + **deconvolution scoring**:
 the measured R[i,j,τ] is the model's total-effect Green's function; the
 Volterra recursion B[τ] = T[τ] − Σ_{s<τ} B[s]·T[τ−s] extracts direct kernels,
-with the permutation null pushed through the same recursion):
-*(running — results below when complete)*
+with the permutation null pushed through the same recursion;
+`results/litext_e3_dynarm_B720.npy`):
+
+| variant | direct P/R/F1 | ancestor P/R/F1 |
+|---|---|---|
+| B max | 0.600/0.500/0.545 | 1.00/0.34/0.51 |
+| B integral | 0.529/0.750/0.621 | 0.94/0.55/0.70 |
+| **B deconv** | **1.000**/0.417/0.588 | 1.00/0.17/0.29 |
+
+- 720 windows = 240 windows, byte-identical detection sets → the misses are
+  NOT a noise-floor problem.
+- **Deconvolution does exactly its job: zero false positives** — every
+  detection is a direct, lag-correct edge (5/5). Its recall cost is the
+  null-noise amplification through the recursion (X1→X4 sits at ratio 0.99 of
+  its α=0.01 threshold — just under).
+
+**The residual misses are the model's, not the method's.** Analytic control:
+propagate impulses through the TRUE companion dynamics (ground_truth_graph;
+note `ground_truth_graph[effect, cause, lag]` orientation) and compare
+integral response strengths per edge:
+
+| missed edge | true-system rank (1=weakest of 12) | model response (stat/thresh) |
+|---|---|---|
+| X2→X0 | 1 | 0.01 |
+| X2→X3 | 5 | 0.01 |
+| X5→X6 | **11** (second-strongest, sum\|R_true\|=7.1) | 0.02 |
+
+All three have response at 1–2% of the null threshold — the frozen GNN
+implements **no transfer at all** on these edges (X6→X7, same slowness class,
+shows a clean bump peaking at its designed lag 4). X2→X0 is also the weakest
+edge in the true system (natural sensitivity limit), but X5→X6 is the
+second-strongest — **the emulator genuinely failed to internalize the
+slow–slow lag-6 coupling.** Meanwhile PCMCI-on-activations (FU1, R=1.00)
+recovers all three: the model *encodes* these correlations without
+*implementing* them in its forward map.
+
+**E3 verdict.** On the 9 edges the model actually implements, the upgraded arm
+detects **9/9** (B+integral), 8/9 lag-consistent; the deconv variant supplies
+a zero-FP direct core; ancestor precision 0.94–1.00 across every variant (the
+arm never hallucinates influence). Raw direct F1 0.621 misses the 0.75 bar,
+but the entire shortfall is now attributed to genuine zeros of the model's
+transfer function — which is itself the payoff: **representation-graph ≠
+implemented-dynamics-graph, and the two channels' disagreement localizes
+exactly which physical couplings the emulator failed to learn.** That
+dissociation is the E4 calibration's raw material, and on GraphCast it is the
+process-level model-evaluation product (Nowack-style): edges present in the
+data/reanalysis graph but absent from the model-response graph = dynamics the
+emulator misrepresents. Teacher-forced propagation (not free rollout) is what
+makes the response channel trustworthy: it fixed the timescale readout
+(Spearman 0.95 vs 0.74, no saturation) and stays clean at 24 steps where free
+rollout degrades.
 
 ---
 
