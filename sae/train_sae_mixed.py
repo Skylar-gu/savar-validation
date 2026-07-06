@@ -54,7 +54,7 @@ INPUT_DIM  = 256
 N_FEATURES = 512
 K_TOPK     = 25
 LR         = 1e-3
-EPOCHS     = 60
+EPOCHS     = int(os.environ.get("SAE_EPOCHS", 60))  # T6a movmech runs use 20 (stride-1 data has 5x the frames of eqvar; 20 ep = 127k steps > Block C's 76k)
 BATCH_SIZE = 256
 
 RESAMPLE_INTERVAL = 1000
@@ -137,7 +137,7 @@ def _flatten(a):   # a: (R, 8, T, 256) -> (samples, ST*256)
         return a.reshape(-1, d).astype(np.float32)
     R, M, T, D = a.shape
     w = np.stack([a[:, :, t:t+ST] for t in range(T - ST + 1)], axis=2)  # (R,M,T',ST,D)
-    return w.reshape(-1, ST * D).astype(np.float32)
+    return w.reshape(-1, ST * D).astype(np.float32, copy=False)
 
 n_val   = max(1, int(n_real * VAL_FRAC))
 n_train = n_real - n_val
@@ -154,8 +154,11 @@ val_x   = _flatten(acts_full[n_train:])
 mean_g = train_x.mean(0)
 std_g  = train_x.std(0) + 1e-8
 
-X_train = torch.from_numpy((train_x - mean_g) / std_g).to(DEVICE)
-X_val   = torch.from_numpy((val_x   - mean_g) / std_g).to(DEVICE)
+# in-place normalisation (ST>1 windowed arrays are multi-GB; avoid broadcast copies)
+train_x -= mean_g; train_x /= std_g
+val_x   -= mean_g; val_x   /= std_g
+X_train = torch.from_numpy(train_x).to(DEVICE)
+X_val   = torch.from_numpy(val_x).to(DEVICE)
 
 print(f"Mixed-mode SAE  —  {DATA_DIR}")
 print(f"  train={len(X_train):,}  val={len(X_val):,}  (all {n_modes} modes pooled)")
