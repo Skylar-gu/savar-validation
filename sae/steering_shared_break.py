@@ -16,7 +16,7 @@ Differences vs Block F:
   * targets (mode -> feature) come from the variant's own Hungarian match.
 
 Usage:
-  python3 sae/steering_shared_break.py --datadir sae_data_hetdynamics_eqvar_whiten \
+  python3 sae/steering_shared_break.py --datadir sae_data/hetdynamics_eqvar_whiten \
       --ckpt sae_mixed_topk_seed0_final.pt --targets 5:f5,6:f6,7:f7 --tag whiten
 Output: results/steering_shared_break_<tag>.npy
 """

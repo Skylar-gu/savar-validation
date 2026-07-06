@@ -30,7 +30,7 @@ Usage:
   python3 sae/subres_ladder.py --ckpt checkpoints/movmech_place/best.pt \
       --variant plain --raw data/realisations_movmech_place \
       --raw-avg data/realisations_movmech_place --avg-key observations_avg \
-      --tag place_plain [--sae sae_data_movmech_place/sae_mixed.pt] --nreal 20
+      --tag place_plain [--sae sae_data/movmech_place/sae_mixed.pt] --nreal 20
 Output: results/subres_ladder_<tag>.npy
 """
 

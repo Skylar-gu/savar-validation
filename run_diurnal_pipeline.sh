@@ -42,7 +42,7 @@ run "01 cnn_train" logs_diurnal/01_cnn_train.log python3 train/cnn_forecaster.py
 echo "[$(ts)] START 03 extract" | tee -a "$STATUS"
 python3 sae/extract_activations.py --diurnal > logs_diurnal/03_extract.log 2>&1
 EX_RC=$?
-if [ -f sae_data_diurnal/activations_full.npy ]; then
+if [ -f sae_data/diurnal/activations_full.npy ]; then
   [ $EX_RC -ne 0 ] && echo "[$(ts)] WARN  03 extract gate exit rc=$EX_RC (activations saved; continuing)" | tee -a "$STATUS"
   echo "[$(ts)] OK    03 extract" | tee -a "$STATUS"
 else

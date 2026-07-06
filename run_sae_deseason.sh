@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deseasonalized SAE chain (reuses existing sae_data_diurnal/ activations):
+# Deseasonalized SAE chain (reuses existing sae_data/diurnal/ activations):
 #   deseason → per-mode SAE → eval → cycle/PC0 analysis.
 # Tests whether mode-specific dynamics features re-emerge once the shared cycle
 # is removed (compare to the raw-diurnal run in STATUS.txt).

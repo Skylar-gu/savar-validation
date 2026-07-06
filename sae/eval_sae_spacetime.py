@@ -8,7 +8,7 @@ feature; identical to the ST=1 convention when ST=1). Scores FINAL checkpoints
 (Block-C rule: never select on recon MSE); aggregates mean±sd across seeds.
 
 Usage:
-  python3 sae/eval_sae_spacetime.py --datadir sae_data_movmech_place \
+  python3 sae/eval_sae_spacetime.py --datadir sae_data/movmech_place \
       --st 3 --seeds 0,1,2 [--out results/foo.npy]
 """
 

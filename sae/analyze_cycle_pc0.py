@@ -11,7 +11,7 @@ For each mode j (mode-weighted res3 activations, 256-dim):
   - |r|(PC0, Z_j)       : alignment of PC0 with the mode
 
 Window t aligns to Z_j(t+K), so absolute time = K + t.
-Reads sae_data_diurnal/{activations_full,Z_full}.npy. Output: cycle_pc0.npy
+Reads sae_data/diurnal/{activations_full,Z_full}.npy. Output: cycle_pc0.npy
 """
 
 import sys
@@ -31,13 +31,13 @@ _ap.add_argument("--deseason", action="store_true",
 _args = _ap.parse_args()
 
 if _args.diurnal:
-    _base = "sae_data_diurnal"
+    _base = "sae_data/diurnal"
 elif _args.dy005:
-    _base = "sae_data_dy005"
+    _base = "sae_data/dy005"
 elif _args.binary:
-    _base = "sae_data_binary"
+    _base = "sae_data/binary"
 else:
-    _base = "sae_data"
+    _base = "sae_data/base"
 if _args.deseason:
     _base += "_deseason"
 DATA_DIR = Path(_base)

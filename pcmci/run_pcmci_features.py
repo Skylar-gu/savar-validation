@@ -38,13 +38,13 @@ _ap.add_argument("--n_real", type=int, default=100)
 _args = _ap.parse_args()
 
 if _args.diurnal:
-    DATA_DIR, SAE_DIR = Path("data/realisations_diurnal"), Path("sae_data_diurnal")
+    DATA_DIR, SAE_DIR = Path("data/realisations_diurnal"), Path("sae_data/diurnal")
     SAVE_PATH = Path("results/pcmci_features_diurnal.npy")
 elif _args.dy005:
-    DATA_DIR, SAE_DIR = Path("data/realisations_dy005"), Path("sae_data_dy005")
+    DATA_DIR, SAE_DIR = Path("data/realisations_dy005"), Path("sae_data/dy005")
     SAVE_PATH = Path("results/pcmci_features_dy005.npy")
 else:
-    DATA_DIR, SAE_DIR = Path("data/realisations"), Path("sae_data")
+    DATA_DIR, SAE_DIR = Path("data/realisations"), Path("sae_data/base")
     SAVE_PATH = Path("results/pcmci_features.npy")
 
 TAU_MAX, ALPHA, PC_ALPHA = 2, 0.05, 0.2

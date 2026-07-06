@@ -15,9 +15,9 @@ run () {  # DIR ST SEED
     2>&1 | tail -5
 }
 
-for SEED in 0 1 2; do run sae_data_movmech_place      1 $SEED; done
-for SEED in 0 1 2; do run sae_data_movmech_place      3 $SEED; done
-for SEED in 0 1 2; do run sae_data_movmech_place_slot 1 $SEED; done
-for SEED in 0 1 2; do run sae_data_movmech_place_slot 3 $SEED; done
-for SEED in 0 1 2; do run sae_data_movmech_place      5 $SEED; done
+for SEED in 0 1 2; do run sae_data/movmech_place      1 $SEED; done
+for SEED in 0 1 2; do run sae_data/movmech_place      3 $SEED; done
+for SEED in 0 1 2; do run sae_data/movmech_place_slot 1 $SEED; done
+for SEED in 0 1 2; do run sae_data/movmech_place_slot 3 $SEED; done
+for SEED in 0 1 2; do run sae_data/movmech_place      5 $SEED; done
 echo "########## T6a SWEEP DONE $(date) ##########"

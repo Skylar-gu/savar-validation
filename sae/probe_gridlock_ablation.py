@@ -38,7 +38,7 @@ from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
 CKPT = "checkpoints/diurnal/best.pt"
 DATA = "data/realisations_diurnal"
-OUT = Path("sae_data_diurnal")
+OUT = Path("sae_data/diurnal")
 INPUT_DIM, N_FEATURES, K_TOPK = 256, 512, 25
 NY = NX = 50
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

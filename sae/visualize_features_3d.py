@@ -3,7 +3,7 @@ Phase 7.5-GNN — 3D visualization of dominant per-mode SAE feature directions.
 
 What we are looking at
 ----------------------
-Each per-mode SAE (sae_data_gnn/sae_mode_{j}.pt) has a decoder whose 512 columns
+Each per-mode SAE (sae_data/gnn/sae_mode_{j}.pt) has a decoder whose 512 columns
 are UNIT vectors in the 256-dim (normalised) mode-weighted activation space — i.e.
 512 candidate "feature directions".  We want to *see* those directions, but 256-D
 is not viewable, so we project each direction onto a 3-D basis.
@@ -63,7 +63,7 @@ from matplotlib import cm
 from matplotlib.colors import TwoSlopeNorm
 
 _ap = argparse.ArgumentParser()
-_ap.add_argument("--data", default="sae_data_gnn", help="per-mode SAE data dir")
+_ap.add_argument("--data", default="sae_data/gnn", help="per-mode SAE data dir")
 _ap.add_argument("--out",  default="figures",      help="output dir for figures")
 _ap.add_argument("--basis", choices=["semantic", "pca"], default="semantic",
                  help="3-D basis: 'semantic' (PC0, Z-readout, residual) or 'pca' (top-3 PCs)")

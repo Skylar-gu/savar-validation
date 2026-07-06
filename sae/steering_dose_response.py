@@ -52,10 +52,10 @@ ckpt = torch.load(CKPT, map_location=DEVICE, weights_only=False)
 model = MeshGNN(50, 50).to(DEVICE)
 model.load_state_dict(ckpt["model_state"])
 model.eval()
-sae, act_mu, act_sd = load_sae("sae_data_hetdynamics_eqvar/sae_mixed.pt")
+sae, act_mu, act_sd = load_sae("sae_data/hetdynamics_eqvar/sae_mixed.pt")
 
 # σ_f from the training-distribution codes (mode-j stream)
-acts_full = np.load("sae_data_hetdynamics_eqvar/activations_full.npy")
+acts_full = np.load("sae_data/hetdynamics_eqvar/activations_full.npy")
 sigma_f, act_rate = {}, {}
 for j, f in TARGETS.items():
     stream = acts_full[:, j].reshape(-1, INPUT_DIM)

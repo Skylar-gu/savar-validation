@@ -2,7 +2,7 @@
 Follow-up 3 — Break the shared subspace before the SAE: diagnostics + datadirs.
 
 Blocks C/D/F pointed at "one global amplitude direction absorbing everything".
-Diagnostics here sharpen that picture on sae_data_hetdynamics_eqvar:
+Diagnostics here sharpen that picture on sae_data/hetdynamics_eqvar:
 
   1. mode-agnostic readout: ONE ridge fit on the MIXED stream (target = own-
      stream Z) reads out every mode's Z at |r| ~= the full per-mode readouts.
@@ -17,12 +17,12 @@ Diagnostics here sharpen that picture on sae_data_hetdynamics_eqvar:
 Interventions (each written as a full datadir so train_sae_mixed.py /
 eval_sae_metrics.py run unchanged):
 
-  sae_data_hetdynamics_eqvar_proj/    activations with the k=1 mixed-ridge
+  sae_data/hetdynamics_eqvar_proj/    activations with the k=1 mixed-ridge
                                       shared direction projected out (the
                                       literal "project out the shared
                                       direction" intervention; diagnostics
                                       predict a null result).
-  sae_data_hetdynamics_eqvar_whiten/  PCA-whitened activations (fit on train
+  sae_data/hetdynamics_eqvar_whiten/  PCA-whitened activations (fit on train
                                       reals, eigenvalue floor 1e-6*lam_max).
                                       Rationale: mode-IDENTITY lives in
                                       low-variance per-blob channel
@@ -44,7 +44,7 @@ import numpy as np
 from pathlib import Path
 from sklearn.linear_model import Ridge
 
-SRC = Path("sae_data_hetdynamics_eqvar")
+SRC = Path("sae_data/hetdynamics_eqvar")
 N_TRAIN = 85          # match train_sae_mixed.py VAL_FRAC=0.15 split
 N_MODES = 8
 
@@ -95,7 +95,7 @@ uniq = np.array([Rcross[j, j] - np.delete(Rcross[j], j).max()
 print("readout uniqueness (own − best other):", np.round(uniq, 3))
 
 # ── 3a. datadir: k=1 shared-direction projection ─────────────────────────────
-proj_dir = Path("sae_data_hetdynamics_eqvar_proj")
+proj_dir = Path("sae_data/hetdynamics_eqvar_proj")
 proj_dir.mkdir(exist_ok=True)
 Xp = acts.astype(np.float64)
 Xp = Xp - (Xp @ w_shared)[..., None] * w_shared
@@ -106,7 +106,7 @@ np.save(proj_dir / "shared_direction.npy", w_shared)
 print(f"wrote {proj_dir}/ (k=1 projection)")
 
 # ── 3b. datadir: PCA whitening (train-fit, eigenvalue floor) ─────────────────
-wh_dir = Path("sae_data_hetdynamics_eqvar_whiten")
+wh_dir = Path("sae_data/hetdynamics_eqvar_whiten")
 wh_dir.mkdir(exist_ok=True)
 mu = Xm.mean(0)
 cov = np.cov(Xm[rng.choice(len(Xm), 200000, replace=False)].T)

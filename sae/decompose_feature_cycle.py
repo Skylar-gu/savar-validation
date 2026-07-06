@@ -19,7 +19,7 @@ _ap = argparse.ArgumentParser()
 _ap.add_argument("--deseason", action="store_true",
                  help="Decompose deseasonalized features (expect diurnal/annual≈0)")
 _args = _ap.parse_args()
-DATA = Path("sae_data_diurnal_deseason" if _args.deseason else "sae_data_diurnal")
+DATA = Path("sae_data/diurnal_deseason" if _args.deseason else "sae_data/diurnal")
 print(f"Decomposing features from {DATA}/\n")
 N_MODES, INPUT_DIM, N_FEATURES, K_TOPK = 8, 256, 512, 25
 K, P_D, P_A = 3, 4, 1461

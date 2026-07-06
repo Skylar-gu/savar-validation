@@ -41,7 +41,7 @@ _a = _ap.parse_args()
 CKPT = "checkpoints/diurnal/best.pt"
 DATA = ("data/realisations_diurnal" if _a.split == "raw"
         else f"data/splits_diurnal/{_a.split}")
-OUT = Path("sae_data_diurnal")
+OUT = Path("sae_data/diurnal")
 INPUT_DIM, N_FEATURES, K_TOPK = 256, 512, 25
 NY = NX = 50
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

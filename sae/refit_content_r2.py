@@ -10,8 +10,8 @@ asymmetry that always lets position win the gl-vs-content tie.
 
 This script drops the one-hot entirely and scores content_R2 on [1, content,
 content^2] only. It is a pure OLS re-fit on the *cached* per-pixel activations
-(sae_data_diurnal/spatial_acts.npz) re-encoded through the *cached* trained SAE
-(sae_data_diurnal/spatial_sae.pt) — no CNN or SAE retraining.
+(sae_data/diurnal/spatial_acts.npz) re-encoded through the *cached* trained SAE
+(sae_data/diurnal/spatial_sae.pt) — no CNN or SAE retraining.
 
 Reports max / median content_R2 and the gl-vs-content taxonomy under BOTH design
 matrices so the confound's effect is visible directly.
@@ -26,7 +26,7 @@ import torch.nn.functional as F
 
 sys.stdout.reconfigure(line_buffering=True)
 
-OUT = Path("sae_data_diurnal")
+OUT = Path("sae_data/diurnal")
 INPUT_DIM, N_FEATURES, K_TOPK = 256, 512, 25
 NY = NX = 50
 BORDER = 3

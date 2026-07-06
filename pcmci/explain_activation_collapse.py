@@ -2,7 +2,7 @@
 Follow-up 1 — Explain the Block G collapse (F1 0.853 -> 0.020 on pooled GNN acts).
 
 Block G's series (c) had TWO confounds vs (a)/(b):
-  1. CADENCE MISMATCH: sae_data_hetdynamics_eqvar/activations_full.npy was
+  1. CADENCE MISMATCH: sae_data/hetdynamics_eqvar/activations_full.npy was
      extracted at STRIDE 5 (T_eff=480 vs T=2400), so PCMCI+ lags on (c) were in
      5-fine-step units, scored against fine-unit ground-truth lags (1..6).
   2. LAG LUMPING: one ridge readout aligned to the forecast target Z(t+K),
@@ -44,7 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
 from gnn_forecaster import MeshGNN, K, HIDDEN
 
 DATA_DIR   = Path("data/realisations_hetdynamics_eqvar")
-SAE_DIR    = Path("sae_data_hetdynamics_eqvar")
+SAE_DIR    = Path("sae_data/hetdynamics_eqvar")
 CKPT       = Path("checkpoints/hetdynamics_eqvar/best.pt")
 CACHE      = SAE_DIR / "activations_stride1_sel.npy"
 CACHE_IDX  = SAE_DIR / "activations_stride1_sel_idx.npy"

@@ -24,16 +24,16 @@ echo "############ [3/6] EXTRACT ACTIVATIONS $(date) ############"
 python3 sae/extract_activations_gnn.py \
     --ckpt checkpoints/hetdynamics_eqvar/best.pt \
     --data data/realisations_hetdynamics_eqvar \
-    --out  sae_data_hetdynamics_eqvar --stride 5
+    --out  sae_data/hetdynamics_eqvar --stride 5
 
 echo "############ [4/6] TRAIN PER-MODE SAE $(date) ############"
-python3 sae/train_sae_per_mode.py --gnn --datadir sae_data_hetdynamics_eqvar
+python3 sae/train_sae_per_mode.py --gnn --datadir sae_data/hetdynamics_eqvar
 
 echo "############ [5/6] EVAL PER-MODE SAE $(date) ############"
-python3 sae/eval_sae_per_mode.py --gnn --datadir sae_data_hetdynamics_eqvar
+python3 sae/eval_sae_per_mode.py --gnn --datadir sae_data/hetdynamics_eqvar
 
 echo "############ [6/6] 3D VISUALIZATION $(date) ############"
 python3 sae/visualize_features_3d.py \
-    --data sae_data_hetdynamics_eqvar --out figures --tag hetdynamics_eqvar --hero 7
+    --data sae_data/hetdynamics_eqvar --out figures --tag hetdynamics_eqvar --hero 7
 
 echo "############ EQVAR PIPELINE DONE $(date) ############"

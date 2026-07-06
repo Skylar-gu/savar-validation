@@ -13,17 +13,17 @@ echo "################ AS-IS: EXTRACT ACTIVATIONS $(date) ################"
 python3 sae/extract_activations_gnn.py \
     --ckpt checkpoints/hetdynamics/best.pt \
     --data data/realisations_hetdynamics \
-    --out  sae_data_hetdynamics --stride 5
+    --out  sae_data/hetdynamics --stride 5
 
 echo "################ AS-IS: TRAIN PER-MODE SAE $(date) ################"
-python3 sae/train_sae_per_mode.py --gnn --datadir sae_data_hetdynamics
+python3 sae/train_sae_per_mode.py --gnn --datadir sae_data/hetdynamics
 
 echo "################ AS-IS: EVAL PER-MODE SAE $(date) ################"
-python3 sae/eval_sae_per_mode.py --gnn --datadir sae_data_hetdynamics
+python3 sae/eval_sae_per_mode.py --gnn --datadir sae_data/hetdynamics
 
 echo "################ AS-IS: 3D VISUALIZATION $(date) ################"
 python3 sae/visualize_features_3d.py \
-    --data sae_data_hetdynamics --out figures --tag hetdynamics --hero 7
+    --data sae_data/hetdynamics --out figures --tag hetdynamics --hero 7
 
 echo "################ AS-IS PIPELINE DONE $(date) ################"
 
@@ -35,17 +35,17 @@ echo "################ EQVAR: EXTRACT ACTIVATIONS $(date) ################"
 python3 sae/extract_activations_gnn.py \
     --ckpt checkpoints/hetdynamics_eqvar/best.pt \
     --data data/realisations_hetdynamics_eqvar \
-    --out  sae_data_hetdynamics_eqvar --stride 5
+    --out  sae_data/hetdynamics_eqvar --stride 5
 
 echo "################ EQVAR: TRAIN PER-MODE SAE $(date) ################"
-python3 sae/train_sae_per_mode.py --gnn --datadir sae_data_hetdynamics_eqvar
+python3 sae/train_sae_per_mode.py --gnn --datadir sae_data/hetdynamics_eqvar
 
 echo "################ EQVAR: EVAL PER-MODE SAE $(date) ################"
-python3 sae/eval_sae_per_mode.py --gnn --datadir sae_data_hetdynamics_eqvar
+python3 sae/eval_sae_per_mode.py --gnn --datadir sae_data/hetdynamics_eqvar
 
 echo "################ EQVAR: 3D VISUALIZATION $(date) ################"
 python3 sae/visualize_features_3d.py \
-    --data sae_data_hetdynamics_eqvar --out figures --tag hetdynamics_eqvar --hero 7
+    --data sae_data/hetdynamics_eqvar --out figures --tag hetdynamics_eqvar --hero 7
 
 echo "################ EQVAR PIPELINE DONE $(date) ################"
 echo "################ ALL DONE $(date) ################"

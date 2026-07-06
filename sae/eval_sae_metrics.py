@@ -24,7 +24,7 @@ eval_sae_per_mode.py / eval_sae_mixed.py so old best-|r| numbers are directly
 comparable side-by-side).
 
 Usage:
-  python3 sae/eval_sae_metrics.py --datadir sae_data_hetdynamics_eqvar \
+  python3 sae/eval_sae_metrics.py --datadir sae_data/hetdynamics_eqvar \
       [--mixed-ckpt sae_mixed.pt] [--variants mixed,permode] [--tag eqvar]
 Prints the table; returns a dict for the aggregator (results/sae_metrics_suite.npy
 is written by running this over all dirs via --aggregate, see __main__).

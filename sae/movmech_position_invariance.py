@@ -23,7 +23,7 @@ corr(feat_shift, feat_orig) per mechanism, per delta; plain vs blurpool (A0)
 separates a signal-processing bug (aliasing) from a concept-forming gap.
 
 Usage:
-  python3 sae/movmech_position_invariance.py --datadir sae_data_movmech_place \
+  python3 sae/movmech_position_invariance.py --datadir sae_data/movmech_place \
       --raw data/realisations_movmech_place --tag place_plain \
       [--ckpt checkpoints/movmech_place/best.pt --variant plain]   # +P3
 Output: results/movmech_posinv_<tag>.npy

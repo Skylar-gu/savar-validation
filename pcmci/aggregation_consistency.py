@@ -11,7 +11,7 @@ On data/realisations_hetdynamics_eqvar:
       (a) true Z          — latent_states
       (b) W-pooled pixels — Zb_j(t) = W[j] · obs(:, t)
       (c) W-pooled GNN activations — per-mode ridge readout Ẑ_j(t) of the
-          pooled 256-dim activation (sae_data_hetdynamics_eqvar), ridge fit on
+          pooled 256-dim activation (sae_data/hetdynamics_eqvar), ridge fit on
           held-out realisations (the pipeline's decodable-content object;
           NOTE: activations see a K=3 window → lag smearing is expected and is
           part of what (c) measures).
@@ -33,7 +33,7 @@ from tigramite.independence_tests.parcorr import ParCorr
 from tigramite.pcmci import PCMCI
 
 DATA_DIR   = Path("data/realisations_hetdynamics_eqvar")
-SAE_DIR    = Path("sae_data_hetdynamics_eqvar")
+SAE_DIR    = Path("sae_data/hetdynamics_eqvar")
 N_REAL     = int(os.environ.get("AG_NREAL", 24))
 PC_ALPHA   = float(os.environ.get("AG_PCALPHA", 0.05))
 RIDGE_TAIL = int(os.environ.get("AG_RIDGE_REALS", 20))

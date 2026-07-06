@@ -26,7 +26,7 @@ _ap.add_argument("--dy005", action="store_true")
 _ap.add_argument("--diurnal", action="store_true")
 _ap.add_argument("--epochs", type=int, default=40)
 _a = _ap.parse_args()
-OUT = Path("sae_data_diurnal" if _a.diurnal else "sae_data_dy005" if _a.dy005 else "sae_data")
+OUT = Path("sae_data/diurnal" if _a.diurnal else "sae_data/dy005" if _a.dy005 else "sae_data/base")
 
 INPUT_DIM, N_FEATURES, K_TOPK = 256, 512, 25
 LR, BATCH = 1e-3, 512

@@ -6,7 +6,7 @@ Concepts land in capture / tiling / dilution regimes. Prediction from
 notes/next_steps_plan.md: mode *identity* is in the dilution regime; slow-mode
 *content* approaches capture.
 
-Pipeline (mixed eqvar SAE, sae_data_hetdynamics_eqvar/sae_mixed.pt):
+Pipeline (mixed eqvar SAE, sae_data/hetdynamics_eqvar/sae_mixed.pt):
  1. Encode all 8 mode streams; binarize (active = selected by TopK, code > 0).
     Restrict to features active in > 0.5% of samples.
  2. Pairwise Ising couplings J by per-feature logistic regression
@@ -42,7 +42,7 @@ from sklearn.linear_model import LogisticRegression
 
 from eval_sae_metrics import INPUT_DIM, N_MODES, load_sae, encode, pearson_cols
 
-DATADIR    = Path("sae_data_hetdynamics_eqvar")
+DATADIR    = Path("sae_data/hetdynamics_eqvar")
 N_SAMP     = int(os.environ.get("IS_NSAMP", 120000))
 MIN_ACT    = float(os.environ.get("IS_MINACT", 0.005))
 TOP_M      = int(os.environ.get("IS_TOPM", 20))

@@ -25,7 +25,7 @@ from pathlib import Path
 
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--datadir", required=True,
-                 help="Activation dir (e.g. sae_data_hetdynamics)")
+                 help="Activation dir (e.g. sae_data/hetdynamics)")
 _ap.add_argument("--seed", type=int, default=None,
                  help="If set: seed torch/numpy and write sae_mixed_<arch>_seed<N>.pt "
                       "instead of sae_mixed.pt (existing artifacts never overwritten)")

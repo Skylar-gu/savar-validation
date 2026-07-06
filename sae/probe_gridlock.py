@@ -50,11 +50,11 @@ _ap.add_argument("--border", type=int, default=3, help="border ring width in pix
 _a = _ap.parse_args()
 
 if _a.diurnal:
-    CKPT, DATA, OUT = "checkpoints/diurnal/best.pt", "data/realisations_diurnal", "sae_data_diurnal"
+    CKPT, DATA, OUT = "checkpoints/diurnal/best.pt", "data/realisations_diurnal", "sae_data/diurnal"
 elif _a.dy005:
-    CKPT, DATA, OUT = "checkpoints/dy005/best.pt", "data/realisations_dy005", "sae_data_dy005"
+    CKPT, DATA, OUT = "checkpoints/dy005/best.pt", "data/realisations_dy005", "sae_data/dy005"
 else:
-    CKPT, DATA, OUT = "checkpoints/base/best.pt", "data/realisations", "sae_data"
+    CKPT, DATA, OUT = "checkpoints/base/best.pt", "data/realisations", "sae_data/base"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NY = NX = 50
