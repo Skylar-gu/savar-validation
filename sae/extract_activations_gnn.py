@@ -43,7 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
 from gnn_forecaster import MeshGNN, K, HIDDEN, N_MP
 
 _ap = argparse.ArgumentParser()
-_ap.add_argument("--ckpt", default="checkpoints_finecadence/best.pt",
+_ap.add_argument("--ckpt", default="checkpoints/finecadence/best.pt",
                  help="GNN checkpoint (model_state) to hook")
 _ap.add_argument("--data", default="data/realisations_finecadence",
                  help="raw realisation_*.npz dir (observations, latent_states, W)")

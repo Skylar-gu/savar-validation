@@ -9,7 +9,7 @@ RAW=data/realisations_movmech_place
 SPLIT=data/splits_movmech_place
 
 for V in blurpool refframe slot; do
-  CKPT=checkpoints_movmech_place_$V
+  CKPT=checkpoints/movmech_place_$V
   ADIR=sae_data_movmech_place_$V
   echo "############ [$V] TRAIN $(date) ############"
   GNN_VARIANT=$V GNN_CKPT_DIR=$CKPT GNN_SPLIT_DIR=$SPLIT \

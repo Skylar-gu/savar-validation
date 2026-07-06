@@ -33,7 +33,7 @@ Read-out
 
 Usage:
   python3 sae/movmech_location_withheld.py \
-      --ckpt checkpoints_movmech_place/best.pt --variant plain \
+      --ckpt checkpoints/movmech_place/best.pt --variant plain \
       --raw data/realisations_movmech_place --tag place_plain \
       [--nwin 16 --steps 300 --seed 0]
 Output: results/movmech_withheld_<tag>.npy  (+ prints a per-mode table)

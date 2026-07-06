@@ -25,7 +25,7 @@ separates a signal-processing bug (aliasing) from a concept-forming gap.
 Usage:
   python3 sae/movmech_position_invariance.py --datadir sae_data_movmech_place \
       --raw data/realisations_movmech_place --tag place_plain \
-      [--ckpt checkpoints_movmech_place/best.pt --variant plain]   # +P3
+      [--ckpt checkpoints/movmech_place/best.pt --variant plain]   # +P3
 Output: results/movmech_posinv_<tag>.npy
 """
 

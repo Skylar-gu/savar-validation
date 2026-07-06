@@ -38,7 +38,7 @@ _ap.add_argument("--n_real", type=int, default=8, help="realisations to evaluate
 _ap.add_argument("--t_stride", type=int, default=20, help="temporal window stride")
 _a = _ap.parse_args()
 
-CKPT = "checkpoints_diurnal/best.pt"
+CKPT = "checkpoints/diurnal/best.pt"
 DATA = ("data/realisations_diurnal" if _a.split == "raw"
         else f"data/splits_diurnal/{_a.split}")
 OUT = Path("sae_data_diurnal")

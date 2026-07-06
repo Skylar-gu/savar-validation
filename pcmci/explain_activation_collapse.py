@@ -45,7 +45,7 @@ from gnn_forecaster import MeshGNN, K, HIDDEN
 
 DATA_DIR   = Path("data/realisations_hetdynamics_eqvar")
 SAE_DIR    = Path("sae_data_hetdynamics_eqvar")
-CKPT       = Path("checkpoints_hetdynamics_eqvar/best.pt")
+CKPT       = Path("checkpoints/hetdynamics_eqvar/best.pt")
 CACHE      = SAE_DIR / "activations_stride1_sel.npy"
 CACHE_IDX  = SAE_DIR / "activations_stride1_sel_idx.npy"
 N_REAL     = int(os.environ.get("AC_NREAL", 24))

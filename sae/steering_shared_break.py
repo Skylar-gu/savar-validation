@@ -44,7 +44,7 @@ TARGETS = {int(kv.split(":")[0]): int(kv.split(":")[1])
            for kv in a.targets.split(",")}
 
 SPLIT = os.environ.get("ST_SPLIT", "data/splits_hetdynamics_eqvar/test")
-CKPT = os.environ.get("ST_CKPT", "checkpoints_hetdynamics_eqvar/best.pt")
+CKPT = os.environ.get("ST_CKPT", "checkpoints/hetdynamics_eqvar/best.pt")
 N_WIN = int(os.environ.get("ST_NWIN", 240))
 ALPHAS_SIG = np.array([-3.0, -1.0, 1.0, 3.0])
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

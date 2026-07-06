@@ -36,7 +36,7 @@ sys.stdout.reconfigure(line_buffering=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
-CKPT = "checkpoints_diurnal/best.pt"
+CKPT = "checkpoints/diurnal/best.pt"
 DATA = "data/realisations_diurnal"
 OUT = Path("sae_data_diurnal")
 INPUT_DIM, N_FEATURES, K_TOPK = 256, 512, 25

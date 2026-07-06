@@ -40,7 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "data_gen"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
-CKPT = "checkpoints_diurnal/best.pt"
+CKPT = "checkpoints/diurnal/best.pt"
 TEST = "data/splits_diurnal/test"
 NY = NX = 50
 L = NY * NX

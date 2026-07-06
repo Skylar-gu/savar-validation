@@ -27,7 +27,7 @@ T5 (dose-response): recovery vs the fast/slow phi gap is read across the
 non-twin subs (Delta phi = 0.9-0.3 = 0.6) vs the twin (Delta phi = 0).
 
 Usage:
-  python3 sae/subres_ladder.py --ckpt checkpoints_movmech_place/best.pt \
+  python3 sae/subres_ladder.py --ckpt checkpoints/movmech_place/best.pt \
       --variant plain --raw data/realisations_movmech_place \
       --raw-avg data/realisations_movmech_place --avg-key observations_avg \
       --tag place_plain [--sae sae_data_movmech_place/sae_mixed.pt] --nreal 20

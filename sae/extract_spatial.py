@@ -32,11 +32,11 @@ _ap.add_argument("--pix_per_frame", type=int, default=100)
 _a = _ap.parse_args()
 
 if _a.diurnal:
-    CKPT, DATA, OUT = "checkpoints_diurnal/best.pt", "data/realisations_diurnal", "sae_data_diurnal"
+    CKPT, DATA, OUT = "checkpoints/diurnal/best.pt", "data/realisations_diurnal", "sae_data_diurnal"
 elif _a.dy005:
-    CKPT, DATA, OUT = "checkpoints_dy005/best.pt", "data/realisations_dy005", "sae_data_dy005"
+    CKPT, DATA, OUT = "checkpoints/dy005/best.pt", "data/realisations_dy005", "sae_data_dy005"
 else:
-    CKPT, DATA, OUT = "checkpoints/best.pt", "data/realisations", "sae_data"
+    CKPT, DATA, OUT = "checkpoints/base/best.pt", "data/realisations", "sae_data"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NY = NX = 50

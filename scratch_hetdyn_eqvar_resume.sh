@@ -17,12 +17,12 @@ while true; do
 done
 
 echo "############ [2/6] TRAIN GNN (eqvar) $(date) ############"
-GNN_CKPT_DIR=checkpoints_hetdynamics_eqvar GNN_SPLIT_DIR=data/splits_hetdynamics_eqvar \
+GNN_CKPT_DIR=checkpoints/hetdynamics_eqvar GNN_SPLIT_DIR=data/splits_hetdynamics_eqvar \
     python3 train/gnn_forecaster.py
 
 echo "############ [3/6] EXTRACT ACTIVATIONS $(date) ############"
 python3 sae/extract_activations_gnn.py \
-    --ckpt checkpoints_hetdynamics_eqvar/best.pt \
+    --ckpt checkpoints/hetdynamics_eqvar/best.pt \
     --data data/realisations_hetdynamics_eqvar \
     --out  sae_data_hetdynamics_eqvar --stride 5
 

@@ -90,7 +90,7 @@ runtime:
   device: cuda
   dp: null
 target:
-  checkpoint_path: checkpoints_movmech_place/best.pt
+  checkpoint_path: checkpoints/movmech_place/best.pt
   ny: 50
   nx: 50
   k: 3

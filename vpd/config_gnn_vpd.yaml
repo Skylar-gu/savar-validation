@@ -76,7 +76,7 @@ runtime:
   device: cuda
   dp: null
 target:
-  checkpoint_path: checkpoints_finecadence/best.pt
+  checkpoint_path: checkpoints/finecadence/best.pt
   ny: 50
   nx: 50
   k: 3

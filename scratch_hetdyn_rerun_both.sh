@@ -6,12 +6,12 @@ set -euo pipefail
 cd /home/ec2-user/savar-project
 
 echo "################ AS-IS: TRAIN GNN $(date) ################"
-GNN_CKPT_DIR=checkpoints_hetdynamics GNN_SPLIT_DIR=data/splits_hetdynamics \
+GNN_CKPT_DIR=checkpoints/hetdynamics GNN_SPLIT_DIR=data/splits_hetdynamics \
     python3 train/gnn_forecaster.py
 
 echo "################ AS-IS: EXTRACT ACTIVATIONS $(date) ################"
 python3 sae/extract_activations_gnn.py \
-    --ckpt checkpoints_hetdynamics/best.pt \
+    --ckpt checkpoints/hetdynamics/best.pt \
     --data data/realisations_hetdynamics \
     --out  sae_data_hetdynamics --stride 5
 
@@ -28,12 +28,12 @@ python3 sae/visualize_features_3d.py \
 echo "################ AS-IS PIPELINE DONE $(date) ################"
 
 echo "################ EQVAR: TRAIN GNN $(date) ################"
-GNN_CKPT_DIR=checkpoints_hetdynamics_eqvar GNN_SPLIT_DIR=data/splits_hetdynamics_eqvar \
+GNN_CKPT_DIR=checkpoints/hetdynamics_eqvar GNN_SPLIT_DIR=data/splits_hetdynamics_eqvar \
     python3 train/gnn_forecaster.py
 
 echo "################ EQVAR: EXTRACT ACTIVATIONS $(date) ################"
 python3 sae/extract_activations_gnn.py \
-    --ckpt checkpoints_hetdynamics_eqvar/best.pt \
+    --ckpt checkpoints/hetdynamics_eqvar/best.pt \
     --data data/realisations_hetdynamics_eqvar \
     --out  sae_data_hetdynamics_eqvar --stride 5
 

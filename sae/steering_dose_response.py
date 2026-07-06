@@ -40,7 +40,7 @@ from train.gnn_forecaster import MeshGNN, K
 from eval_sae_metrics import INPUT_DIM, N_MODES, load_sae, encode
 
 SPLIT  = os.environ.get("ST_SPLIT", "data/splits_hetdynamics_eqvar/test")
-CKPT   = os.environ.get("ST_CKPT", "checkpoints_hetdynamics_eqvar/best.pt")
+CKPT   = os.environ.get("ST_CKPT", "checkpoints/hetdynamics_eqvar/best.pt")
 N_WIN  = int(os.environ.get("ST_NWIN", 240))
 TARGETS = {5: 216, 6: 475, 7: 143}          # mode -> matched feature (Block C)
 ALPHAS_SIG = np.array([-3.0, -1.0, 1.0, 3.0])

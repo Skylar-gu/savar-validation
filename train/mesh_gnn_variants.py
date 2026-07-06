@@ -27,7 +27,7 @@ plain MeshGNN checkpoint is a strict subset (extra params only).
 
 Run:
   GNN_VARIANT=blurpool GNN_EPOCHS=12 GNN_BATCH=64 \
-    GNN_CKPT_DIR=checkpoints_movmech_place_blurpool \
+    GNN_CKPT_DIR=checkpoints/movmech_place_blurpool \
     GNN_SPLIT_DIR=data/splits_movmech_place \
     python3 train/mesh_gnn_variants.py
 """
@@ -51,7 +51,7 @@ VARIANT   = os.environ.get("GNN_VARIANT", "plain")
 BLUR_SIGMA = float(os.environ.get("GNN_BLUR_SIGMA", 1.0))
 N_SLOTS    = int(os.environ.get("GNN_N_SLOTS", 8))
 SLOT_ITERS = int(os.environ.get("GNN_SLOT_ITERS", 3))
-CKPT_DIR   = os.environ.get("GNN_CKPT_DIR", f"checkpoints_movmech_place_{VARIANT}")
+CKPT_DIR   = os.environ.get("GNN_CKPT_DIR", f"checkpoints/movmech_place_{VARIANT}")
 SPLIT_DIR  = os.environ.get("GNN_SPLIT_DIR", "data/splits_movmech_place")
 
 

@@ -48,19 +48,19 @@ _ap.add_argument("--binary", action="store_true", help="Use disjoint-binary-mask
 _args = _ap.parse_args()
 
 if _args.diurnal:
-    CKPT_PATH = Path("checkpoints_diurnal/best.pt")
+    CKPT_PATH = Path("checkpoints/diurnal/best.pt")
     DATA_DIR  = Path("data/realisations_diurnal")
     OUT_DIR   = Path("sae_data_diurnal")
 elif _args.dy005:
-    CKPT_PATH = Path("checkpoints_dy005/best.pt")
+    CKPT_PATH = Path("checkpoints/dy005/best.pt")
     DATA_DIR  = Path("data/realisations_dy005")
     OUT_DIR   = Path("sae_data_dy005")
 elif _args.binary:
-    CKPT_PATH = Path("checkpoints_binary/best.pt")
+    CKPT_PATH = Path("checkpoints/binary/best.pt")
     DATA_DIR  = Path("data/realisations_binary")
     OUT_DIR   = Path("sae_data_binary")
 else:
-    CKPT_PATH = Path("checkpoints/best.pt")
+    CKPT_PATH = Path("checkpoints/base/best.pt")
     DATA_DIR  = Path("data/realisations")
     OUT_DIR   = Path("sae_data")
 

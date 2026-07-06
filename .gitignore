@@ -1,22 +1,27 @@
-# ── Third-party dependency (clone separately — see README) ───────────────────
+# ── Third-party / vendored dependencies (clone separately — see README) ──────
 # Upstream SAVAR library: https://github.com/xtibau/savar  (commit 532e5e5)
 savar/
+# Vendored parameter-decomposition lab (its own repo/CLAUDE.md; ~9 GB)
+param-decomp/
 
 # ── Large generated data (regenerate with data_gen/) ─────────────────────────
 data/
+
+# ── SAE activations / per-experiment SAE data (regenerate with sae/) ─────────
+# All consolidated under sae_data/<experiment>/
 sae_data/
-sae_data_dy005/
-sae_data_diurnal/
-sae_data_diurnal_deseason/
 
 # ── Model checkpoints (regenerate with train/) ───────────────────────────────
+# All consolidated under checkpoints/<experiment>/
 checkpoints/
-checkpoints_dy005/
-checkpoints_diurnal/
 
-# ── Run logs ─────────────────────────────────────────────────────────────────
+# ── Run / experiment outputs ─────────────────────────────────────────────────
+out/
+vpd_out/
+
+# ── Run logs & local scratch ─────────────────────────────────────────────────
 logs/
-logs_diurnal/
+scratchpad/
 *.log
 
 # ── Python ───────────────────────────────────────────────────────────────────

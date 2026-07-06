@@ -5,7 +5,7 @@ no internals needed).
 
 Protocol
 --------
-1. Load frozen checkpoints_hetdynamics_eqvar/best.pt (MeshGNN, gcn mode, emb=0).
+1. Load frozen checkpoints/hetdynamics_eqvar/best.pt (MeshGNN, gcn mode, emb=0).
 2. From held-out test windows (K=3 frames), add an impulse d*pattern_j to the
    LAST input frame, pattern_j = W_plus[:, j] (latent->pixel map of mode j),
    scaled so the impulse's peak equals IMP_SIGMA x pixel std.
@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from train.gnn_forecaster import MeshGNN, K
 
 SPLIT   = os.environ.get("IR_SPLIT", "data/splits_hetdynamics_eqvar/test")
-CKPT    = os.environ.get("IR_CKPT", "checkpoints_hetdynamics_eqvar/best.pt")
+CKPT    = os.environ.get("IR_CKPT", "checkpoints/hetdynamics_eqvar/best.pt")
 N_WIN   = int(os.environ.get("IR_NWIN", 240))
 N_STEPS = int(os.environ.get("IR_NSTEPS", 12))
 SIGMA   = float(os.environ.get("IR_SIGMA", 1.0))

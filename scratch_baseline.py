@@ -38,7 +38,7 @@ for name,p in [("predict grand mean", b_grand),
 
 # --- GNN ---
 model = MeshGNN(ny=50,nx=50,k=K).to(DEVICE)
-ck = torch.load("checkpoints_finecadence/best.pt", map_location=DEVICE)
+ck = torch.load("checkpoints/finecadence/best.pt", map_location=DEVICE)
 model.load_state_dict(ck["model_state"]); model.eval()
 preds=[]
 with torch.no_grad():
