@@ -1,11 +1,13 @@
 # Literature Review — SAVAR→GraphCast Interpretability Pipeline (2026-07-03)
 
-Screened by abstract across five areas (mech interp, causality, climate,
-atmospheric science, dynamical systems); the sources below passed screening and
-were read (full text where accessible, abstract+key-sections otherwise). One
-paragraph per source. Screening rejects listed at the end. The action items this
-review generates are consolidated in
-[next_steps_plan.md](next_steps_plan.md) §"Updated recommendations".
+Screened by abstract across areas (mech interp, causality, climate,
+atmospheric science, dynamical systems, and — §E, added 2026-07-03 for the
+moving-mechanism spec — object-centric learning, equivariance, and
+super-resolution); the sources below passed screening and were read (full text
+where accessible, abstract+key-sections otherwise). One paragraph per source.
+Screening rejects listed at the end. The action items this review generates are
+consolidated in [next_steps_plan.md](next_steps_plan.md) §"Updated recommendations"
+and, for §E, in [[moving_mechanism_subres_spec_v2]].
 
 ---
 
@@ -281,6 +283,99 @@ result as a faithfulness check). Kept in the roster because the GraphCast rung
 *is* the deterministic-emulator case TSCI was built for — the open question from
 our baseline table ("is an intrinsically deterministic emulator TSCI's regime?")
 is still live and cheap to answer there.
+
+## E. Object-centric learning, equivariance, and super-resolution (moving-mechanism spec)
+
+Added 2026-07-03 for [[moving_mechanism_subres_spec_v2]]. These reshape the
+moving-mechanism plan from "move the patterns and the tools will work" into a
+two-axis (data × architecture) design, and harden the sub-resolution angle.
+
+**Mansouri et al., "Object-centric architectures enable efficient causal
+representation learning" (arXiv:2310.19054).** The single most plan-changing source.
+Standard causal representation learning assumes the observation is an injective
+function of the latents; with multiple objects that breaks, and disentanglement
+fails. Their fix pairs a Slot-Attention encoder (one representation per object) with
+weak supervision from *sparse perturbations*, recovering each object's properties
+far more data-efficiently than a monolithic encoder. The load-bearing consequence
+for us: a monolithic encoder that collapses the scene into one vector — exactly our
+W-pooled GNN — provably cannot preserve per-object causal independence when objects
+move. So our v1 hypothesis ("moving mechanisms force a which-vs-where split") is
+predicted to *fail* for the current architecture: the split needs an object-centric
+prior, not just moving data. This converts the session's recurring
+data/method/architecture adjudication into a designed 2×2 and supplies the
+architecture arm (A1/A2) of the v2 spec, plus a "build causality in" baseline to
+score against our post-hoc route.
+
+**Invariant Slot Attention (Biza et al., ICML 2023, arXiv:2302.04973).** Standard
+slot attention entangles an object's identity with its pose; ISA bakes in
+equivariance to per-object translation/scale/rotation by transforming the position
+encodings against each slot's own reference frame, yielding identity codes invariant
+to where the object sits. This is the concrete recipe behind the A1 rung ("describe
+things relative to the blob's own centre"): the minimal change that gives a
+location-invariant "what" channel on the mesh GNN. (Companion: Dual-State Slot
+Attention for video, arXiv:2606.12601, decouples appearance from identity across
+frames — relevant if we go to the drifting `advect` regime; and "Does object binding
+emerge in pretrained ViTs?" arXiv:2510.24709, the null-emergence question our plain
+network instantiates.)
+
+**Zhang, "Making Convolutional Networks Shift-Invariant Again" (arXiv:1904.11486).**
+Downsampling (strided conv, max/avg-pool) ignores the sampling theorem, so small
+input shifts scramble internal feature maps; a low-pass (blur) filter before
+downsampling restores shift-equivariance nearly for free. Our stride-5 hub lattice +
+W-pooling is exactly such a sampling-theorem-violating downsample, so a *moving* blob
+aliases inside the network before it can be understood. Gives the cheapest
+architecture rung (A0, blur-pool) and the P3 control that separates a
+signal-processing bug (internal aliasing) from a representational one (missing
+binding prior) — two different failures with very different fixes. (Follow-on:
+translation-invariant polyphase sampling, arXiv:2404.07410.)
+
+**"The False Promise of Zero-Shot Super-Resolution in Machine-Learned Operators"
+(arXiv:2510.06646) and "Limits of Resolution Equivariance in Fourier Neural
+Operators" (arXiv:2606.00677).** Trained operators systematically fail at inference
+above (or below) their training resolution, via two mechanisms: resolution-
+interpolation failure (energy spikes at unseen sampling frequencies) and
+information-extrapolation failure (assigning energy to frequencies never observed) —
+i.e. aliasing and hallucinated high-wavenumber content. Their diagnostic is the
+*normalized residual spectrum*: real recovery leaves residual energy flat across
+wavenumber, hallucination piles it at the un-trained high-k. Two transfers to the
+sub-resolution angle: (1) the trained-GNN ladder levels can fail even where the T0
+oracle succeeds, so keep the in-principle vs trained-model split sharp; (2) their
+residual-spectrum test *is* our T3 hallucination detector, promoted to the primary
+sub-res metric.
+
+**Off-grid spectral super-resolution (Candès & Fernández-Granda; atomic-norm line
+spectral estimation, e.g. arXiv:1612.01459).** Recovering closely spaced spectral
+lines from coarse Fourier data is possible via convex optimisation *iff* a
+separation condition on the support holds. Gives the T0 identifiability gate a
+theoretical floor: a T0 failure is attributed to a genuine resolution limit
+(sub-separation), not a weak method — and tells us how different the colliding
+sub-sources' scales must be before recovery is even possible.
+
+**Keller & Welling, "Traveling Waves Encode the Recent Past and Enhance Sequence
+Learning" (Wave-RNN, ICLR 2024, arXiv:2309.08045).** A recurrent net whose hidden
+state carries induced traveling waves stores a short-term memory of a sequence more
+efficiently than wave-free RNNs. For the drifting (`advect`) regime this is a
+positive template, not just a null: a *good* moving-mechanism code should look like a
+traveling wave carrying its recent past, and the colliding fine scales separate by
+their dispersion (phase speed vs wavenumber). Motivates the T2 traveling-wave /
+spatiotemporal-Fourier surrogate rung and predicts what to probe for in the `advect`
+GNN's activations.
+
+**Spatio-temporal SAEs for video (arXiv:2604.03919) and SAE seed instability
+(arXiv:2606.12138).** The first trains SAEs over space×time patches of video
+representations — the right function class for a *moving* feature, which a per-frame
+pooled SAE cannot represent as one atom; this upgrades T6's SAE. The second shows SAE
+features are seed-dependent while the spanned subspace is reproducible — reinforcing
+the ≥3-seed, report-the-stable-subspace discipline (already flagged via "Are SAE
+benchmarks reliable?") specifically for the moving-mechanism SAE re-run.
+
+**GraphCast/Pangu storm-tracking skill (operational track-error evaluations,
+2024–2026).** Both emulators track moving cyclones with position errors competitive
+with or better than ECMWF-HRES — i.e. the target models *already* solve the
+moving-mechanism problem operationally. So the abstraction we are trying to force on
+SAVAR is one GraphCast must possess; the payoff of the SAVAR exercise is pinning down
+*where* such an abstraction lives (locations vs channels vs slots) before we go
+looking for it in the real model.
 
 ---
 
