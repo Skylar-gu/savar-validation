@@ -275,10 +275,13 @@ every rung, scored against that rung's own PCMCI-on-Z ceiling.
 | R3 **multivariate** | 2–3 coupled observed channels per node, cross-channel edges in Φ | coupled atmospheric fields | Ŵ must become (channel × space); cross-channel edges test PCMCI+ conditioning | ~3 d |
 | R4 **scale** | N = 24 modes, larger grid, unknown-N discovery | realistic mode count; N unknown a priori | N̂ estimation (Stage 1) and PCMCI+ parent search; Ising/Leiden favored over varimax here | ~3 d |
 | R5 **rollout training** | fine-tune the forecaster on 4–8-step rollout (GraphCast's curriculum) | autoregressive training | does trained-on-rollout change F5's damping and E3's channel? Also widens per-mode skill spread (next_steps D3.1) | ~1 d |
+| R6 **atmosphere regime** (added 2026-07-06) | push all φ → ~0.95–0.99 per step keeping the fast/slow *ratio* spread (fork generate_hetdynamics: HD_PHI band; verify spectral radius < 1, re-tune eqvar innovation scaling); cut pixel observation noise (DY_SCALE); innovations stay exogenous/per-mode/skew-normal | GraphCast's one-step *statistical* regime: near-unit memory, one-step R² ≈ 0.9+ (vs current 0.125), high SNR from memory+structure — NOT from scaling ξ, which is a no-op (in a self-exciting VAR, signal is filtered past noise; amplitude cancels) | extreme autocorrelation: effective sample size per unit T collapses, lag pinning blurs (does the PCMCI-on-Z anchor itself sink?); near-determinism flirts with the faithfulness pathology that destroyed fine16 (E2 scores must stay discriminative); E3's integral stat should *gain* power (persistent responses); at R² ≈ 0.9 the forecaster is no longer gradient-starved — rerun identity probes: if "one shared operator" persists with abundant skill, that finding gets its strongest form | ~1 d (generator fork + ~3 h retrain + rerun E1/E2/E3 scripts, already parameterized by datadir/ckpt) |
 
 Rung discipline unchanged: keep Φ's edge set fixed wherever possible so F1s
-are comparable down the ladder; when a rung breaks the pipeline, the *stage* it
-breaks is the finding (that attribution is what the ladder is for).
+are comparable down the ladder (R6 keeps the edge SET; coefficients rescale
+with the φ band, so it gets its own PCMCI-on-Z ceiling); when a rung breaks
+the pipeline, the *stage* it breaks is the finding (that attribution is what
+the ladder is for).
 
 **The transfer table** (maintained as rungs complete) — each row is a sentence
 we will be able to assert about GraphCast with a SAVAR-calibrated confidence:
@@ -286,6 +289,7 @@ we will be able to assert about GraphCast with a SAVAR-calibrated confidence:
 | SAVAR-validated statement | GraphCast statement it licenses |
 |---|---|
 | footprint-based discovery ≈ oracle on R1–R4 | discover GraphCast "modes" spatially from layer-8 activations (varimax⁺/Leiden), don't hunt monosemantic identity channels |
+| pipeline numbers hold on R6 (high-memory regime) | the calibration is valid at GraphCast's one-step SNR, not just at SAVAR's noisy-index SNR — closes the regime-mismatch objection |
 | Adag scores rank Ŵ correctly (E2) | select the GraphCast aggregation unsupervised, with a known error rate |
 | teacher-forced forcing responses reach F1 ≥ 0.75 (E3) | the Hakim–Masanam arm on GraphCast yields a graph of known expected quality |
 | agreement→accuracy curve (E4) | a confidence statement for the recovered GraphCast graph, despite no ground truth |
@@ -342,6 +346,7 @@ technique themselves. ~3–4 days.
 | 4 | E4 agreement calibration v1 | no | E1+E3 | ~2 |
 | 5 | R1 overlap rung + pipeline rerun | generator + ~3 h train | E2 | ~2 |
 | 6 | R2 static-inputs rung | ~4 h train | — (parallel) | ~1 |
+| 6b | R6 atmosphere-regime rung + E1/E2/E3 rerun | generator + ~3 h train | E2 | ~1 |
 | 7 | E6 orientation sweep | no | — (fill GPU-idle time) | ~2 |
 | 8 | R3/R4/R5 rungs | yes | E4 v1 | ~7 |
 | 9 | E4 final calibration across all rungs | no | 8 | ~1 |
