@@ -1,7 +1,7 @@
 # Moving-mechanism sub-resolution recovery — spec
 
 **Supersedes the position-locked framing in
-[[subres_spatial_dealiasing_plan]].** Reuses its de-aliasing machinery (operator
+[[subresolution_dealiasing_plan]].** Reuses its de-aliasing machinery (operator
 fork `D_sub` vs `D_avg`, the recoverability ladder, the true-realization vs
 statistics control) but fixes the design flaw that makes the whole thing
 collapse into a position readout.
@@ -60,7 +60,7 @@ identity from location.**
 
 ## Test battery (rerun "all relevant tests" on the moving-mechanism testbed)
 
-Carry over T0–T6 from [[subres_spatial_dealiasing_plan]], add the
+Carry over T0–T6 from [[subresolution_dealiasing_plan]], add the
 position-invariance controls (P-tests) that are the whole point of this spec.
 
 **T0 — spatial de-aliasing identifiability floor (clean Fourier, no GNN).**

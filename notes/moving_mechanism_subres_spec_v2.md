@@ -1,7 +1,7 @@
 # Moving-mechanism sub-resolution recovery — spec v2 (plain-language rewrite)
 
-**Replaces [[moving_mechanism_subres_spec]] (v1)**, which replaced
-[[subres_spatial_dealiasing_plan]]. Same core idea as v1 — make the weather
+**Replaces [[moving_mechanism_subres_spec_v1]] (v1)**, which replaced
+[[subresolution_dealiasing_plan]]. Same core idea as v1 — make the weather
 patterns *move around* so the network is forced to learn *what* each pattern is,
 not just *where* it sits — but a literature sweep (2026-07-03) changed three things.
 Sources: [[literature_review]] §E.

@@ -6,7 +6,7 @@ Superseded by the MeshGNN ([results_gnn.md](results_gnn.md)) because the CNN can
 host grid-locked structure and its architecture is far from GraphCast; the CNN
 results remain the reference for the *content* and *cycle* experiments.
 
-Sources: `notes/REPO_SUMMARY_AND_AUDIT.md`, `notes/phase7_sae_findings.md`,
+Sources: `notes/repo_summary_and_audit.md`, `notes/phase7_sae_findings.md`,
 `notes/importance_tables.md`, `notes/rmse_baselines.md`, `results/*.npy`.
 
 ---
