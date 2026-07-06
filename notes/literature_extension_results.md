@@ -135,7 +135,52 @@ by coherence floor 0.25 from C0=12 initial components):
 | dmd_act | 8 | 4/8 | 0.405 | k-means on \|DMD mode\| loadings |
 | merge01/coarse4/split7/fine16/shift5/diag8/blur | — | — | 0.96/0.71/0.96/0.71/0.00/0.00/0.50 | corrupted variants for E2's quality axis |
 
-*(PCMCI battery running — graph F1 table below when complete)*
+**Graph recovery** (pixels pooled through each Ŵ → PCMCI+, 24 reals;
+anchors: true-Z / oracle-W pixels = 0.853, oracle-W activations = 0.855):
+
+| candidate | F1 | P | R | reading |
+|---|---|---|---|---|
+| vmax_pix | **0.853** | 0.75 | 1.00 | = oracle, edge-for-edge (R=1.00, fn=1/288) |
+| km_pix | **0.853** | 0.75 | 1.00 | = oracle |
+| **vmax_act** | **0.819** | 0.83 | 0.81 | fully-internal discovery, −0.036 vs oracle despite cos 0.70 + 4 surplus components |
+| km_act | 0.280 | 0.37 | 0.23 | 4/8 footprints → collapse |
+| dmd_act | 0.177 | 0.18 | 0.17 | weakest discovery |
+| blur (corrupt) | **0.892** | 0.81 | 0.99 | *above* oracle: smoothed footprints average more pixels → less observation noise; footprint sharpness is not what the graph needs |
+| split7 | 0.776 | 0.72 | 0.84 | one split mode: mild damage |
+| merge01 | 0.587 | 0.53 | 0.66 | one merged pair: moderate |
+| coarse4 | 0.207 | 0.29 | 0.16 | merged pairs: severe |
+| fine16 | 0.013 | 0.09 | 0.01 | every blob split: near-duplicate variables condition each other's edges away — textbook faithfulness violation |
+| shift5 / diag8 | 0.000 | 0.00 | 0.00 | misplaced footprints: total loss (402/340 FPs) |
+
+**Fully-internal path** (activations pooled through Ŵ, per-mode PC1 readout —
+unsupervised end to end, no Z and no pixels in the series):
+
+| variant | F1 | P | R |
+|---|---|---|---|
+| acts:oracle (oracle W + PC1 readout) | 0.813 | 0.69 | 0.99 |
+| acts:vmax_act (discovered W + PC1 readout) | 0.641 | 0.68 | 0.60 |
+
+**E1 readings.**
+1. **The W-free price on this rung is ≈0.00–0.03 F1** when discovery uses the
+   varimax operator: from raw pixels it is exactly oracle (0.853, R=1.00);
+   from internals alone 0.819. The existence proof (FU1) converts to a method.
+2. **The W-free price decomposes additively until the ends are combined**:
+   unsupervised readout costs 0.04 (0.855 ridge → 0.813 PC1 at oracle W);
+   discovery costs 0.03 (0.853 → 0.819 at pixel pooling); the fully-internal
+   combination compounds to 0.641 (imperfect footprints × imperfect readout).
+   Consequence for GraphCast: the **hybrid route** — footprints discovered
+   from *internals*, series pooled from *data* — is the strong configuration,
+   and it is fully available there (ERA5 is the data). The all-internal route
+   is the fallback when the question is specifically "what graph does the
+   model encode."
+3. Discovery quality is strongly method-dependent (varimax ≫ k-means ≫ DMD on
+   activations) — and footprint cosine is NOT a sufficient predictor of graph
+   F1 (blur cos 0.50 → F1 0.892; km_act cos 0.61 → F1 0.28). What matters is
+   whether the pooled series preserve the independence model — precisely the
+   property E2's consistency scores test.
+4. The corruption ladder orders as theory predicts: blur (benign) > split-one
+   > merge-one > merge-all ≈ weak-discovery > split-all ≈ misplaced (fatal),
+   giving E2 a full-range quality axis (F1 0.00–0.89).
 
 ---
 
