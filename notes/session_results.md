@@ -948,3 +948,111 @@ where-code.
 **Remaining v2 (delegated, running):** T2 wave-surrogate rung needs a MOVE=advect
 dataset (place has no within-sequence drift → expected null); T6 = space-time SAE
 (≥3 seeds) + VPD with the gate-decorrelation patch on the movmech net.
+
+## T6 — space-time SAE + VPD on the movmech net
+
+The two designed "payoff" tests (spec v2 §T6), run on the plain and slot
+movmech-place nets. Both are NULLS, consistent with every other v2 arm: neither
+temporal context nor an explicit anti-redundancy objective manufactures the
+mode-selective structure the hypothesis wanted.
+
+### T6a — space-time mixed SAE
+
+**Setup.** `SAE_SPACETIME=ST` on `sae/train_sae_mixed.py` stacks ST consecutive
+frames of each pooled per-mode activation (input_dim = 256·ST) so a *moving*
+pattern's temporal signature can be one atom — a per-frame SAE cannot represent
+it. Trained on the STRIDE-1 movmech activations (`sae_data_movmech_place{,_slot}/`,
+(100,8,2397,256)); SAE_EPOCHS=20 (127k–149k steps, > Block C's 76k). 3 seeds
+each; scored on FINAL checkpoints with the Block-C suite
+(`sae/eval_sae_spacetime.py`: Hungarian MCC, matched F1, uniqueness; Z aligned to
+each window's centre frame). Eval validated against Block C (eqvar ST=1 reproduces
+MCC 0.4064±0.0036). Results: `results/t6a_spacetime_*.npy`.
+
+| net | ST | Hungarian MCC | **mean uniqueness** | matched F1 |
+|---|---|---|---|---|
+| plain | 1 | 0.313 ± 0.005 | **−0.135 ± 0.012** | 0.367 ± 0.009 |
+| plain | 3 | 0.508 ± 0.006 | **−0.015 ± 0.005** | 0.365 ± 0.014 |
+| plain | 5 | 0.494 ± 0.009 | **−0.004 ± 0.004** | 0.340 ± 0.007 |
+| slot  | 1 | 0.327 ± 0.022 | **−0.175 ± 0.029** | 0.415 ± 0.025 |
+| slot  | 3 | 0.571 ± 0.005 | **−0.024 ± 0.006** | 0.449 ± 0.013 |
+
+**Reading — space-time does NOT lift uniqueness above 0.**
+1. Uniqueness (matched-mode |r| − best-other-mode |r|) is **≤ 0 at every ST for
+   both nets**. It converges toward 0 *from below* as ST rises (plain −0.135 →
+   −0.015 → −0.004; slot −0.175 → −0.024) but never crosses positive. The
+   success bar (uniqueness meaningfully > 0 = features that are more selective
+   for their own mode than any other) is not met — temporal context only shrinks
+   the cross-contamination margin to ≈0, it never inverts it.
+2. **The MCC rise is a trap, not a win.** MCC jumps 0.31→0.51 (plain) / 0.33→0.57
+   (slot) from ST=1→3, but that is stacking more frames giving the Hungarian match
+   more raw signal to correlate against the centre-frame Z — raw *match quality*,
+   not *selectivity*. Uniqueness, the metric that isolates mode-identity, stays
+   pinned at/below 0. Same shape as the whole session: more dims → better raw
+   correlation, no mode-unique code. (F1 is flat-to-down, 0.37/0.34, confirming
+   no real per-mode discrimination gain.)
+3. Slot (the strongest what-code candidate) tracks plain — a sliver higher MCC/F1,
+   equally non-positive uniqueness. No architecture builds a space-time what-code.
+
+**T6a verdict: NULL.** A moving pattern's temporal signature is representable
+by the space-time SAE (MCC climbs), but the resulting atoms are still
+shared-content, not mode-identity — uniqueness never exceeds 0. The single-frame
+"uniqueness ≈ 0" ceiling is not a per-frame artifact; it survives ST∈{3,5}.
+
+### T6b — VPD with the anti-redundancy (GateDecorrelation) patch
+
+**Setup.** `vpd/config_gnn_vpd_m4_movmech_decor.yaml` = the M4 eqvar config (all
+4 MP layers, `layers.{0..3}.mlp.{0,2}`, C=64, 5000 steps) + `GateDecorrelationLoss`
+coeff 1.0 (the Follow-up-2 operating point), on `checkpoints_movmech_place/best.pt`
+(plain net). Patch already applied in `param-decomp` (not double-applied). Run
+`vpd_out/runs/p-4f19433e`. Redundancy scored per-realisation against each val
+realisation's OWN moving W (`vpd/analyze_redundancy_movmech.py` — the fixed-W
+analyzer is invalid here because blobs move per realisation);
+`results/vpd_movmech_redundancy_decor.npy`.
+
+| module | raw PR (/64) | med \|r\| | pattern-PR (subst) | n_subst | #pref (subst) |
+|---|---|---|---|---|---|
+| layers.0.mlp.0 | 1.01 | 0.003 | 1.34 | 13 | 1 |
+| layers.0.mlp.2 | 1.04 | 0.003 | 2.47 | 16 | 0 |
+| layers.1.mlp.0 | 1.05 | 0.089 | 5.40 | 32 | 3 |
+| layers.1.mlp.2 | 1.29 | 0.068 | 6.86 | 28 | 3 |
+| layers.2.mlp.0 | 1.05 | 0.117 | 6.44 | 30 | 0 |
+| layers.2.mlp.2 | 1.15 | 0.043 | 6.39 | 19 | 1 |
+| layers.3.mlp.0 | 1.06 | 0.080 | 7.84 | 29 | 5 |
+| layers.3.mlp.2 | 1.11 | 0.021 | 4.86 | 14 | 1 |
+
+Training healthy: Faithfulness converged, GateDecor drove med pairwise gate-map
+|r| to 0.003–0.117 (from the Block-A ≈0.8 shared-pattern baseline).
+
+**Reading — identical to the eqvar decor baseline; no mode-mechanisms.**
+1. **Raw PR ≈ 1** (1.01–1.29) at every module — matches eqvar decor (1.08–1.45)
+   and eqvar base (1.08–1.54). The amplitude hierarchy ImportanceMinimality
+   imposes is untouched by moving the mechanisms.
+2. The decorrelation term does its pattern job here too: med |r| collapses to
+   ~0.003–0.12 and pattern-PR among substantive components rises to 1.3–7.8
+   (>1, the single shared map splits into distinct patterns). But — as in eqvar —
+   this is method-level pattern differentiation, not mechanism discovery.
+3. **The decisive negative repeats: components are NOT mode-preferential.**
+   Among substantive components #pref = 0–5/64 (eqvar decor: 0–8). Full-64 #pref
+   (12–29) is carried by near-dead low-amplitude components. Dominant-mode counts
+   pile on the amplitude extremes X0 and X7 (e.g. layer-0 [23,3,3,3,2,4,5,21]),
+   i.e. usage tracks blob amplitude/timescale, not a per-mode mechanism split;
+   sp(φ,entropy) is small and mixed-sign (−0.52…+0.18). VPD reports one
+   mode-agnostic amplitude-dynamics operator, exactly as on the eqvar net.
+
+**T6b verdict: NULL — matches eqvar.** Moving the mechanisms + the anti-redundancy
+patch does not make VPD components mode-preferential. PR≈1 and #pref(subst)≈0,
+byte-for-byte the eqvar story: the GNN's shared MP-MLPs do not factor into per-mode
+mechanisms for VPD to isolate.
+
+### T6 net verdict
+
+Both designed payoff tests are NULLS. The space-time SAE's uniqueness stays ≤ 0
+(never the >0 that would signal a mode-selective what-code); VPD with
+decorrelation still gives raw PR≈1 and non-mode-preferential components. This is
+the *expected* result and it closes the movmech v2 battery: making SAVAR
+mechanisms MOVE gives the tools nothing to bite on that they lacked on the
+static-blob eqvar net — position remains necessary and sufficient to read a mode,
+there is no location-independent what-code, and neither temporal stacking nor an
+explicit anti-redundancy objective manufactures one. **advect arm (MOVE=advect +
+`pcmci/wave_surrogate.py`) remains DEFERRED** — the generator hard-asserts
+MOVE=='place'; the wave-surrogate rung is out of scope for this session.
