@@ -1,7 +1,8 @@
 # Project summary — plain-language orientation
 
 *A one-read orientation for a collaborator who is not in this subfield. Written
-after the 2026-07-03 sessions; reflects the reorganized repo layout.*
+after the 2026-07-03 sessions, updated after 2026-07-06; reflects the
+reorganized repo layout.*
 
 ---
 
@@ -104,22 +105,88 @@ spatially-homogeneous subspace** that supports linear *readout* but not per-mode
 representation, but no tool can pry the modes apart because the network never
 separated them in the first place.
 
+## The July 6 turn: from diagnosing failures to building a recovery recipe
+
+By July 6 the diagnosis felt finished — new experiments kept re-confirming the
+same facts. But hidden inside them was one strongly *positive* result that had
+never been exploited: if you average the network's internal activity over each
+mode's true location and run causal discovery on those averaged signals, you
+recover the **full cause-and-effect graph** — exactly as well as if you had the
+true mode signals themselves. Everything needed to reconstruct the causal
+structure *is* inside the network. The only "cheat" was that we told the tool
+where each mode lives. On GraphCast, nobody will tell us that.
+
+So the problem reduces to three honest questions: **(1)** can we *find* the
+mode locations ourselves, from the network alone? **(2)** with no answer key,
+how do we decide which candidate "map of modes" to trust? **(3)** with no
+answer key, how much should we trust the final graph? This reframing also
+flips the project's biggest negative finding into an instruction: since the
+network stores identity in *places*, look for modes as **places** (regions
+whose activity moves together), not as abstract labels.
+
+The new plan is `notes/literature_extension_experiments.md`; the first three
+experiments ran on 2026-07-06 (`notes/literature_extension_results.md`):
+
+- **Finding the modes without the answer key — works, cheaply.** A classic
+  climate-science technique (rotated principal components — the same math used
+  to find El Niño in real data), pointed at the network's internal activity,
+  finds all 8 blobs. Graph-recovery score with the true locations: 0.853; with
+  locations discovered from the raw data: 0.853 (identical — and the method
+  even gets the *number* of modes right on its own); discovered purely from
+  the network's internals: 0.819. **The price of not being told where the
+  modes are is about 4%.** Two side-lessons: cheaper clustering methods do
+  much worse (method choice matters), and slightly *blurred* locations
+  actually beat the exact ones (blurring averages away pixel noise) — you
+  don't need to draw the blobs' outlines perfectly, you need the averaged
+  signals to keep the right dependence structure.
+
+- **Poking the model and watching the ripples — much better now, and it
+  exposed a real flaw in the network.** The old "poke one mode, watch what
+  responds" test recovered only half the graph, because responses were read
+  through the model's own free-running forecasts, which fade unrealistically.
+  Reading the ripples along the *true* data instead removes the fading (the
+  speed-ordering of the modes is now recovered almost perfectly), and a
+  statistic that *accumulates* slow responses finds **9 of the 12 true links**
+  with almost no false alarms — and every false alarm but one is actually a
+  real two-step chain (A→B→C showing up as A→C). A final untangling step
+  (deconvolution) that separates chains from direct links produces **zero**
+  false alarms. Best part: the 3 links still missed turn out to be links the
+  network **never learned** — on one of them the true system responds strongly
+  and the network not at all, even though the network's internal encodings
+  *contain* the correlation. The test can now point at specific physical
+  couplings an emulator failed to internalize — exactly the kind of statement
+  we ultimately want to make about GraphCast.
+
+- **Choosing without an answer key — first attempt failed usefully; fix is
+  running.** Literature scores that check whether a candidate mode-map
+  "preserves independence structure" turned out to be gameable: a map that
+  destroys *all* signal is perfectly "consistent" (nothing depends on anything,
+  at any level) and scored near the top while being worthless. The fixed
+  version — which also demands the map keep some signal and not create
+  near-duplicate modes — is running now. Either outcome is fine: if it ranks
+  candidates correctly we have our answer-key-free selector; if not, the
+  backup selector is agreement between the two independent channels above.
+
 ## Where it's headed
 
-The diagnosis phase is considered done; the focus shifts from "verify the
-problem" to "engineer around it" (see `notes/literature_extension_experiments.md`
-and `notes/next_steps_plan.md`). The live threads:
-1. **Break the shared subspace before interpreting it** — project out the single
-   global amplitude direction (or use decorrelated-dictionary / group-sparse SAE
-   objectives) so features have a chance to become mode-selective; re-score with
-   the stricter SAE metric suite (uniqueness and steering-leakage are the numbers
-   to move).
-2. **VPD objective surgery** — add explicit anti-redundancy so weight components
-   actually split, since the gates already register the timescale lever.
-3. **A moving/advecting-mechanism dataset** (blobs that drift within a sequence)
-   to probe temporal, not just spatial, mechanism reading.
-4. The end goal is unchanged: once the pipeline can extract genuine mechanism on
-   SAVAR ground truth, apply it to **GraphCast**.
+1. **Finish the answer-key-free machinery**: the fixed selection scores (E2),
+   then E4 — calibrate how well *agreement* between the two independent
+   channels (read-the-activations vs poke-the-model) predicts actual accuracy,
+   because agreement is the only score computable on GraphCast. The July-6
+   result that the two channels disagree exactly where the network failed to
+   learn a coupling suggests disagreement is not just noise — it's diagnostic.
+2. **Rebuild SAVAR toward GraphCast, one property per rung (R1–R6)**:
+   overlapping blobs, geography-as-input, several coupled variables, many
+   modes, rollout training, and — added July 6 — an **"atmosphere-regime"
+   variant (R6)**: today one step of SAVAR is mostly unpredictable noise,
+   whereas one step of real weather is nearly deterministic; R6 makes all the
+   modes much slower-moving (and the observations cleaner) so the network —
+   and the SAEs, which only ever see 3 frames — finally operate in the
+   signal-rich setting the real target lives in.
+3. Each rung re-runs the same recipe and adds one row to a **transfer table**:
+   a sentence we can assert about GraphCast with a known, SAVAR-calibrated
+   confidence.
+4. End goal unchanged: point the validated recipe at **GraphCast**.
 
 ---
 
@@ -142,5 +209,7 @@ and `notes/next_steps_plan.md`). The live threads:
 | Ad-hoc / historical scripts | `scratch/` |
 
 For a deeper technical account see `notes/session_results.md` (the full 2026-07-03
-run log), `notes/results_cnn.md` / `notes/results_gnn.md` (consolidated forecaster
+run log), `notes/literature_extension_results.md` (the 2026-07-06 run log),
+`notes/literature_extension_experiments.md` (the current plan),
+`notes/results_cnn.md` / `notes/results_gnn.md` (consolidated forecaster
 results), and `notes/repo_summary_and_audit.md`.

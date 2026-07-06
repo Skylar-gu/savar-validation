@@ -28,7 +28,7 @@ deseasonalization removes that confound. See `notes/diurnal_datagen_summary.md`.
 | `vpd/` | adVersarial Parameter Decomposition on the GNN (uses vendored `param-decomp/`) |
 | `baselines/` | RMSE baselines (oracle / persistence) |
 | `visualization/` | model / mode visualizations |
-| `notes/` | pipeline spec, requirements, and results write-ups (start with `summary_jul3.md`) |
+| `notes/` | pipeline spec, requirements, and results write-ups (start with `summary_jul6.md`) |
 | `checkpoints/<variant>/` | trained model checkpoints, one subfolder per experiment (gitignored) |
 | `sae_data/<variant>/` | extracted activations + trained SAEs, one subfolder per experiment (gitignored) |
 | `data/` | generated datasets, one subfolder per experiment (gitignored) |
