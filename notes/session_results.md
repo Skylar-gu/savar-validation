@@ -893,3 +893,58 @@ location-independent what-code. Both v2 predictions (plain fails P1; architectur
 rescues it) are false; the sharper withheld test shows the abstraction the
 hypothesis wanted is still absent — position is necessary and sufficient to read
 a mode.
+
+## T1–T5 — the sub-resolution recovery ladder (read between the pixels)
+
+`sae/subres_ladder.py`, `results/subres_ladder_place.npy`, 20 realisations. For
+each of the 16 fine sub-sources (2 per parent blob, a fast φ=0.9 / slow φ=0.3
+pair that COLLIDE to one envelope under coarse sampling, + one identical-φ=0.6
+twin pair on blob 7), recover the true `Z_fine[m]` at rising model power. L0 =
+single coarse frame; L1 = ±HW-frame windowed linear on coarse envelopes; L3 =
+ridge on the GNN's W_sub-pooled node activations. Run under **D_sub** (decimation
+= aliasing, recoverable) and **D_avg** (block-average = low-pass, destructive).
+
+Representative corr-to-Z_fine (fast subs X5/X7/X9, slow X4/X6, twins X14/15):
+
+| level | D_sub fast | D_sub slow | D_avg fast | D_avg slow |
+|---|---|---|---|---|
+| L0 (1 frame) | 0.49 | 0.55–0.65 | **0.01** | 0.15–0.30 |
+| L1 (window)  | **0.89–0.90** | 0.82 | 0.83–0.86 | 0.38–0.42 |
+| L3 (GNN acts) | 0.70–0.74 | 0.42 | 0.55–0.62 | 0.40 |
+
+**Findings.**
+1. **T1 operator fork is clean at the floor.** L0 under D_avg collapses to ≈0 for
+   the fast subs (0.01–0.05) but D_sub keeps them (0.49) — block-averaging
+   genuinely destroys the single-frame cue that decimation only scrambles. The
+   fork narrows with model power: L1's temporal window recovers fast subs even
+   under D_avg (blur preserves the *dynamics*), so "de-aliasing" past the floor is
+   really temporal, not spatial.
+2. **The GNN is a WORSE sub-resolution reader than a plain windowed linear.** L3
+   (0.39–0.74) < L1 (0.78–0.90) at every sub under D_sub. The trained network
+   builds no superior fine representation — a ±HW ridge on raw coarse envelopes
+   beats it. (Same shape as the whole session: the GNN carries content, adds no
+   fine/mode structure.)
+3. **T4 twin null FAILS in the diagnostic direction.** The identical-dynamics
+   twins X14/X15 are individually recovered at L0 = 0.73/0.74 and L3 = 0.65 —
+   *above* most non-twins. Dynamically identical sources can only be told apart by
+   POSITION (their sub-footprints alias onto different coarse pixels). So the
+   "recovery" reads *where*, not *what* — the scorecard's leak-position outcome,
+   confirming the session-wide thesis.
+4. **T5 dose-response is flat/inverted.** L3 non-twin (real within-pair Δφ=0.6) =
+   0.545 vs twin (Δφ=0) = 0.65: recovery does NOT rise with dynamical
+   distinctness — if anything the twins do better. Recovery tracks position, not
+   Δφ.
+5. **T3 no hallucination.** Residual is fine-detail-dominated (rFine≈1.0
+   everywhere = leftover error is uncorrelated with the parent/low-k stream)
+   while L3 corr is only modest — i.e. honest *incomplete* recovery, not fabricated
+   fine structure (which would show high corr with residual still piling on fine).
+
+**Ladder verdict.** The sub-pixel signal IS recoverable in principle (T0 floor
+passed; L1 confirms temporal de-aliasing works), but the GNN doesn't exploit it,
+and every apparent "fine recovery" through the network is position-leakage
+(T4/T5), not dynamics-reading. Consistent with P1-withheld: no what-code, only
+where-code.
+
+**Remaining v2 (delegated, running):** T2 wave-surrogate rung needs a MOVE=advect
+dataset (place has no within-sequence drift → expected null); T6 = space-time SAE
+(≥3 seeds) + VPD with the gate-decorrelation patch on the movmech net.
