@@ -9,7 +9,7 @@ FC_REAL_DIR=data/realisations_hetdynamics FC_SPLIT_DIR=data/splits_hetdynamics \
 
 echo "############ [2/6] TRAIN GNN $(date) ############"
 GNN_CKPT_DIR=checkpoints/hetdynamics GNN_SPLIT_DIR=data/splits_hetdynamics \
-    python3 train/gnn_forecaster.py
+    python3 train/gnn/gnn_forecaster.py
 
 echo "############ [3/6] EXTRACT ACTIVATIONS $(date) ############"
 python3 sae/extract_activations_gnn.py \

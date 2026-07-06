@@ -36,7 +36,7 @@ import networkx as nx
 from scipy import stats
 
 sys.stdout.reconfigure(line_buffering=True)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "data_gen"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 

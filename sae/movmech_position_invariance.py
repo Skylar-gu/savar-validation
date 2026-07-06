@@ -122,7 +122,7 @@ def p1_p2(acts, Z, centres_x, tag, rng):
 def p3_shift_equivariance(ckpt, variant, raw_dir, deltas=(1, 2, 4, 8), n_real=6):
     """Representational shift-equivariance under an input roll."""
     import torch
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
     from gnn_forecaster import MeshGNN, K
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if variant == "plain":

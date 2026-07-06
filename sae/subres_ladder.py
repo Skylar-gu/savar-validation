@@ -40,7 +40,7 @@ import numpy as np
 import torch
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
 from gnn_forecaster import MeshGNN, K
 
 N_SUB = 16

@@ -41,7 +41,7 @@ from tigramite.data_processing import DataFrame
 from tigramite.independence_tests.parcorr import ParCorr
 from tigramite.pcmci import PCMCI
 
-from train.gnn_forecaster import K, MultiRealisationDataset
+from train.gnn.gnn_forecaster import K, MultiRealisationDataset
 from vpd.run_gnn_vpd import GNNExperimentConfig, build_target, run_batch_gnn
 
 N_MODES = 8

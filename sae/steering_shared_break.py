@@ -30,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from train.gnn_forecaster import MeshGNN, K
+from train.gnn.gnn_forecaster import MeshGNN, K
 from eval_sae_metrics import INPUT_DIM, N_MODES, load_sae, encode
 
 ap = argparse.ArgumentParser()

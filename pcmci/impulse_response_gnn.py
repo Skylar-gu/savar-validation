@@ -34,7 +34,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from train.gnn_forecaster import MeshGNN, K
+from train.gnn.gnn_forecaster import MeshGNN, K
 
 SPLIT   = os.environ.get("IR_SPLIT", "data/splits_hetdynamics_eqvar/test")
 CKPT    = os.environ.get("IR_CKPT", "checkpoints/hetdynamics_eqvar/best.pt")

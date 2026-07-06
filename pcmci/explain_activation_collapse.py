@@ -40,7 +40,7 @@ from tigramite.independence_tests.parcorr import ParCorr
 from tigramite.pcmci import PCMCI
 from pydmd import DMD
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
 from gnn_forecaster import MeshGNN, K, HIDDEN
 
 DATA_DIR   = Path("data/realisations_hetdynamics_eqvar")

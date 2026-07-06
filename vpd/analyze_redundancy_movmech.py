@@ -36,7 +36,7 @@ if PROJECT_ROOT not in sys.path:
 
 from param_decomp_lab.component_model_io import load_component_model
 
-from train.gnn_forecaster import MultiRealisationDataset
+from train.gnn.gnn_forecaster import MultiRealisationDataset
 from vpd.run_gnn_vpd import GNNExperimentConfig, build_target, run_batch_gnn
 from vpd.analyze_redundancy import PHI, TAU, spearman, participation_ratio
 

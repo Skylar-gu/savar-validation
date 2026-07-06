@@ -23,7 +23,7 @@ run() {  # run <name> <logfile> <cmd...>
 }
 
 # 0. Fail fast if the GPU isn't actually usable
-run "00 verify_gpu" logs/diurnal/00_verify_gpu.log python3 train/verify_gpu.py
+run "00 verify_gpu" logs/diurnal/00_verify_gpu.log python3 train/cnn/verify_gpu.py
 
 # PCMCI is CPU-only → run it concurrently with the GPU work
 echo "[$(ts)] START 02 pcmci (background, CPU)" | tee -a "$STATUS"
@@ -35,7 +35,7 @@ echo "[$(ts)] START 02 pcmci (background, CPU)" | tee -a "$STATUS"
 PCMCI_PID=$!
 
 # 1. Train the CNN on the diurnal splits (GPU)
-run "01 cnn_train" logs/diurnal/01_cnn_train.log python3 train/cnn_forecaster.py --diurnal
+run "01 cnn_train" logs/diurnal/01_cnn_train.log python3 train/cnn/cnn_forecaster.py --diurnal
 
 # 3. Extract res3 activations. The PCA gate may exit non-zero; that is advisory —
 #    activations_full.npy is written before it, so we continue if the file exists.

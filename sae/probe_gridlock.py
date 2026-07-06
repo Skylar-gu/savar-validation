@@ -37,7 +37,7 @@ import numpy as np
 import torch
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
 _ap = argparse.ArgumentParser()

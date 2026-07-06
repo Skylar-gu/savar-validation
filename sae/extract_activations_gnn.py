@@ -39,7 +39,7 @@ from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import cross_val_predict
 from scipy.stats import pearsonr
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
 from gnn_forecaster import MeshGNN, K, HIDDEN, N_MP
 
 _ap = argparse.ArgumentParser()

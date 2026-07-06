@@ -140,7 +140,7 @@ def main():
     GY = torch.from_numpy(gy.ravel().astype(np.float32)).to(dev)
 
     # ── model + hook (final node H, exactly as the extract/oracle pipeline) ──
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
     from gnn_forecaster import MeshGNN, K
     if a.variant == "plain":
         model = MeshGNN(ny=NY, nx=NX, k=K).to(dev)

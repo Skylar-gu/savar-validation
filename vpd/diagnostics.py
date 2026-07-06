@@ -35,7 +35,7 @@ if PROJECT_ROOT not in sys.path:
 from param_decomp.masks import make_mask_infos
 from param_decomp_lab.component_model_io import load_component_model
 
-from train.gnn_forecaster import HUB_STRIDE, MultiRealisationDataset
+from train.gnn.gnn_forecaster import HUB_STRIDE, MultiRealisationDataset
 from vpd.run_gnn_vpd import GNNExperimentConfig, MeshGNNNodeOut, build_target, run_batch_gnn
 
 

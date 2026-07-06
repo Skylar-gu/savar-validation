@@ -1,7 +1,7 @@
 """
 Architecture sweep for the moving-mechanism test (spec v2 §"network upgrades").
 
-Flags on the existing MeshGNN (train/gnn_forecaster.py); the PLAIN net stays the
+Flags on the existing MeshGNN (train/gnn/gnn_forecaster.py); the PLAIN net stays the
 default everywhere else. Each variant addresses one hypothesis for why a plain
 smush-to-one-vector net fails the left-vs-right test (P1) on MOVE=place:
 
@@ -29,7 +29,7 @@ Run:
   GNN_VARIANT=blurpool GNN_EPOCHS=12 GNN_BATCH=64 \
     GNN_CKPT_DIR=checkpoints/movmech_place_blurpool \
     GNN_SPLIT_DIR=data/splits_movmech_place \
-    python3 train/mesh_gnn_variants.py
+    python3 train/gnn/mesh_gnn_variants.py
 """
 
 import os, sys, time

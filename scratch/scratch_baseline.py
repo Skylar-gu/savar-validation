@@ -1,6 +1,6 @@
 import numpy as np, torch, glob, sys
 from pathlib import Path
-sys.path.insert(0,"train")
+sys.path.insert(0,"train/gnn")
 from gnn_forecaster import MeshGNN, MultiRealisationDataset, K, run_epoch, DEVICE
 from torch.utils.data import DataLoader
 

@@ -34,7 +34,7 @@ sys.stdout.reconfigure(line_buffering=True)
 import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 from cnn_forecaster import ResBlock2D, K, BASE_CH
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

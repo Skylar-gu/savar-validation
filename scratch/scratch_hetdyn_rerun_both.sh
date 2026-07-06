@@ -7,7 +7,7 @@ cd /home/ec2-user/savar-project
 
 echo "################ AS-IS: TRAIN GNN $(date) ################"
 GNN_CKPT_DIR=checkpoints/hetdynamics GNN_SPLIT_DIR=data/splits_hetdynamics \
-    python3 train/gnn_forecaster.py
+    python3 train/gnn/gnn_forecaster.py
 
 echo "################ AS-IS: EXTRACT ACTIVATIONS $(date) ################"
 python3 sae/extract_activations_gnn.py \
@@ -29,7 +29,7 @@ echo "################ AS-IS PIPELINE DONE $(date) ################"
 
 echo "################ EQVAR: TRAIN GNN $(date) ################"
 GNN_CKPT_DIR=checkpoints/hetdynamics_eqvar GNN_SPLIT_DIR=data/splits_hetdynamics_eqvar \
-    python3 train/gnn_forecaster.py
+    python3 train/gnn/gnn_forecaster.py
 
 echo "################ EQVAR: EXTRACT ACTIVATIONS $(date) ################"
 python3 sae/extract_activations_gnn.py \
