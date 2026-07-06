@@ -69,34 +69,53 @@ def ridge_out_in(Xtr, ytr, Xin, yin, Xout, yout, lam=RIDGE_LAM):
 
 # ── learned attention pool (torch), location withheld ────────────────────────
 
-def attn_out_in(Htr, ytr, Hin, yin, Hout, yout, dev, steps, seed):
+def attn_out_in(Htr, ytr, Hin, yin, Hout, yout, dev, steps, seed, priors=None):
     """H*: (n_windows, L, 256) fp32 on GPU. Fit q,w,b on Htr; eval on Hin/Hout.
-    Targets standardised by train stats. Returns (out_r2, in_r2)."""
+    Targets standardised by train stats. Returns (out_r2, in_r2).
+
+    priors: optional (prior_tr, prior_in, prior_out), each (n, L) — a per-window
+    soft bump at that realisation's TRUE blob centre. This HANDS localisation to
+    the SAME attention/readout (logits += gamma * prior, gamma learnable). It is
+    the capability CONTROL: if the identical probe recovers oracle skill once the
+    location is provided, the withheld collapse is a self-localisation failure,
+    not a weak readout."""
     g = torch.Generator(device="cpu").manual_seed(seed)
     q = torch.zeros(DIM, device=dev, requires_grad=True)
     w = (0.01 * torch.randn(DIM, generator=g)).to(dev).requires_grad_(True)
     b = torch.zeros(1, device=dev, requires_grad=True)
+    params = [q, w, b]
+    gamma = None
+    if priors is not None:
+        gamma = torch.ones(1, device=dev, requires_grad=True)  # prior sharpness
+        params.append(gamma)
     ym, ysd = ytr.mean(), ytr.std() + 1e-8
     yt = ((ytr - ym) / ysd).to(dev)
-    opt = torch.optim.Adam([q, w, b], lr=1e-2)
+    opt = torch.optim.Adam(params, lr=1e-2)
+
+    def pooled(H, prior):
+        logits = H @ q                                # (n, L)
+        if prior is not None:
+            logits = logits + gamma * prior           # per-window centre bump
+        a = torch.softmax(logits, dim=1)
+        return torch.einsum("nl,nlc->nc", a, H)       # (n, 256)
+
+    p_tr = priors[0] if priors else None
     for _ in range(steps):
         opt.zero_grad()
-        a = torch.softmax(Htr @ q, dim=1)            # (n, L)
-        feat = torch.einsum("nl,nlc->nc", a, Htr)    # (n, 256)
-        pred = feat @ w + b
+        pred = pooled(Htr, p_tr) @ w + b
         loss = ((pred - yt) ** 2).mean()
         loss.backward()
         opt.step()
 
-    def r2(H, y):
+    def r2(H, y, prior):
         with torch.no_grad():
-            a = torch.softmax(H @ q, dim=1)
-            feat = torch.einsum("nl,nlc->nc", a, H)
-            yh = (feat @ w + b).cpu().numpy() * float(ysd) + float(ym)
+            yh = (pooled(H, prior) @ w + b).cpu().numpy() * float(ysd) + float(ym)
         y = y.cpu().numpy()
         ss = ((y - y.mean()) ** 2).sum()
         return float(1 - ((y - yh) ** 2).sum() / (ss + 1e-12))
-    return r2(Hout, yout), r2(Hin, yin)
+    p_in = priors[1] if priors else None
+    p_out = priors[2] if priors else None
+    return r2(Hout, yout, p_out), r2(Hin, yin, p_in)
 
 
 def main():
@@ -109,9 +128,16 @@ def main():
     ap.add_argument("--steps", type=int, default=300)
     ap.add_argument("--n-real", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--control", action="store_true",
+                    help="positive control: also give the attention scorer (x,y) "
+                         "coords, so it CAN localise by position (probe-capacity check)")
     a = ap.parse_args()
     rng = np.random.default_rng(a.seed)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # coarse-mesh (50x50) node coordinates, for the capability-control centre bump
+    gy, gx = np.meshgrid(np.arange(NY), np.arange(NX), indexing="ij")
+    GX = torch.from_numpy(gx.ravel().astype(np.float32)).to(dev)   # (L,)
+    GY = torch.from_numpy(gy.ravel().astype(np.float32)).to(dev)
 
     # ── model + hook (final node H, exactly as the extract/oracle pipeline) ──
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
@@ -134,14 +160,14 @@ def main():
     H_all = torch.empty((R, a.nwin, L, DIM), dtype=torch.float32, device=dev)
     Z_all = np.empty((R, N_MODES, a.nwin), dtype=np.float32)
     Wpool = np.empty((R, N_MODES, a.nwin, DIM), dtype=np.float32)  # oracle W-pool feats
-    centres_x = np.empty((R, N_MODES), dtype=np.float32)
+    centres = np.empty((R, N_MODES, 2), dtype=np.float32)          # (row, col) fine grid
     with torch.no_grad():
         for r, p in enumerate(paths):
             d = np.load(p)
             obs = d["observations"].astype(np.float32)     # (2500, T)
             Z = d["latent_states"].astype(np.float32)      # (8, T)
             W = d["W"].astype(np.float32)                  # (8, 2500)
-            centres_x[r] = d["centres"][:, 1]
+            centres[r] = d["centres"]
             T = obs.shape[1]
             starts = np.linspace(200, T - K - 1, a.nwin).astype(int)
             frames = obs.T.reshape(T, NY, NX)
@@ -160,9 +186,18 @@ def main():
     print(f"{'mech':>4} | {'oracle out':>10} {'withheld out':>12} {'wh-orc gap':>10} | "
           f"{'oracle in':>9} {'withheld in':>11} | nL/nR")
     rows = []
+    SIG = 3.0  # coarse-px width of the capability-control centre bump
+    def centre_bump(reals, k):
+        """(n_r*nwin, L) soft bump at each realisation's TRUE mode-k centre."""
+        cx = torch.from_numpy(centres[reals, k, 1] / 2.0).to(dev)   # fine->coarse col
+        cy = torch.from_numpy(centres[reals, k, 0] / 2.0).to(dev)   # fine->coarse row
+        d2 = (GX[None] - cx[:, None]) ** 2 + (GY[None] - cy[:, None]) ** 2  # (n_r, L)
+        bump = -d2 / (2 * SIG ** 2)                                  # log-Gaussian logits
+        return bump[:, None, :].expand(-1, a.nwin, -1).reshape(-1, L)
+
     for k in range(N_MODES):
-        left = np.where(centres_x[:, k] < FINE_MID)[0]
-        right = np.where(centres_x[:, k] >= FINE_MID)[0]
+        left = np.where(centres[:, k, 1] < FINE_MID)[0]
+        right = np.where(centres[:, k, 1] >= FINE_MID)[0]
         if len(left) < 4 or len(right) < 4:
             rows.append(dict(k=k, orc_out=np.nan, wh_out=np.nan, orc_in=np.nan,
                              wh_in=np.nan, nL=len(left), nR=len(right)))
@@ -185,7 +220,10 @@ def main():
                 y = torch.from_numpy(Z_all[reals, k].reshape(-1).astype(np.float32))
                 return H, y
             Htr, yt = hp(tr); Hin, yi = hp(inr); Hout, yo = hp(B)
-            w_out, w_in = attn_out_in(Htr, yt, Hin, yi, Hout, yo, dev, a.steps, a.seed + k)
+            priors = ((centre_bump(tr, k), centre_bump(inr, k), centre_bump(B, k))
+                      if a.control else None)
+            w_out, w_in = attn_out_in(Htr, yt, Hin, yi, Hout, yo, dev, a.steps,
+                                      a.seed + k, priors=priors)
             wh_out.append(w_out); wh_in.append(w_in)
         row = dict(k=k, orc_out=float(np.mean(orc_out)), wh_out=float(np.mean(wh_out)),
                    orc_in=float(np.mean(orc_in)), wh_in=float(np.mean(wh_in)),

@@ -818,3 +818,78 @@ all 8 mechanisms.
 aliasing bug exists. Prediction for the sweep: A0/A1/A2 should NOT move P1,
 because the plain net already has no position gap. Running the sweep to confirm
 (the main result), per spec.
+
+## Architecture sweep A0/A1/A2 — the v2 main result (CONFIRMED null)
+
+`train/mesh_gnn_variants.py`, sweep `scratch_movmech_sweep.sh`,
+`results/movmech_posinv_place_{blurpool,refframe,slot}.npy`. Trained plain
+(place) + three upgrades on the same moving-mechanism data: **A0** blurpool
+(anti-aliased downsampling, Zhang 2019), **A1** blob-centre-relative pooling
+(ref-frame), **A2** slot attention. Val corr: plain 0.585, blurpool/refframe/slot
+0.583–0.594 — statistically identical.
+
+| variant | mean P1 gap | mean P1 out-R² | P3 equivariance (δ=1→8) |
+|---|---|---|---|
+| plain    | −0.004 | 0.250 | 1.00 / 0.999 / 0.999 / 0.998 |
+| blurpool | −0.003 | 0.253 | 1.00 / 0.999 / 0.998 / 0.995 |
+| refframe | −0.001 | 0.250 | 1.00 / 0.999 / 0.999 / 0.999 |
+| slot     | −0.006 | 0.245 | 1.00 / 1.00 / 1.00 / 1.00 |
+
+**The v2 main prediction is INVERTED, cleanly, for every architecture.** The
+vision-literature fixes (blurpool, ref-frame, slot) were predicted to *rescue* a
+plain net that "fails" left-vs-right. There is nothing to rescue: the GCN
+backbone is already translation-equivariant by construction (P3=1.00 across the
+board), so P1 gap ≈ 0 everywhere and the fancy pooling moves nothing. The whole
+premise (aliased downsampling breaks position-invariance) is a strided-CNN
+pathology that does not exist in symmetric-normalised message passing.
+
+## P1-WITHHELD — is the invariance LEARNED or just handed by the W-pool?
+
+`sae/movmech_location_withheld.py`,
+`results/movmech_withheld_place_{plain,slot}{,_ctrl}.npy`. The oracle P1 above
+pools at the ground-truth moving footprint `W[k]·H` — it TELLS the readout where
+the blob is; only the content it reads is position-invariant. So P1's
+"invariance" is partly *given*, not learned. This test withholds the location:
+replace W-pooling with a **learned attention pool** (per-mode query `q_k`,
+softmax over the 2500 nodes, no W) that must *find* mode k by content and
+transfer LEFT→RIGHT. Oracle (W-pool ridge) and withheld (attention) are fit on
+the **same** windows/splits.
+
+Capability **control**: hand the *same* attention probe each realisation's TRUE
+blob centre as a soft attention prior (`logits += γ·bump`). If it then recovers
+oracle skill, the probe is expressive and the only missing ingredient is
+location.
+
+Out-of-region R² (train LEFT → test RIGHT, symmetrised):
+
+| mech | φ-ceil | oracle | withheld | +centre-prior (control) |
+|---|---|---|---|---|
+| plain X5 | 0.64 | 0.365 | −0.052 | 0.130 |
+| plain X6 | 0.72 | 0.450 | −0.036 | **0.407** |
+| plain X7 | 0.73 | 0.510 | −0.004 | **0.405** |
+| plain **mean** | | **0.180** | **−0.111** | (X6/X7 ≈ oracle) |
+| slot X7  | 0.73 | 0.496 | 0.096 | 0.511 |
+| slot **mean** | | **0.190** | **0.021** | **0.189 (ret 1.01)** |
+
+**Reading — the invariance is W-GIVEN, there is no self-localizable what-code.**
+1. Withheld collapses to ≈0 on the forecastable modes for BOTH architectures
+   (plain retention −0.62, slot 0.11) — and fails even *in-region* (it can't
+   localize the moving blob within a single half-grid either).
+2. The control settles the "weak probe?" objection: the identical attention
+   readout, once handed the true centre, recovers oracle skill (slot retention
+   **1.01** — a dead-on match; plain X6/X7 recover 79–90%). So the readout is
+   fully capable; the sole failure is *self-localization*.
+3. Therefore the pooled per-mechanism code is location-invariant only because the
+   W-pool (or an oracle centre) supplies "where." The network builds **no
+   content signature that says "this blob is mode k"** — mode identity lives in
+   position, exactly as the grid-lock / epiphenomenal-position finding predicted.
+   Slot attention (A2), the architecture designed to bind objects, retains a
+   sliver more than plain (X7 0.096 vs −0.004) but does not build a real
+   what-code either.
+
+**Net v2 verdict.** Moving the mechanisms + an equivariant backbone factor out
+"where" *for free* at the pooled level, but they do NOT induce a learned,
+location-independent what-code. Both v2 predictions (plain fails P1; architecture
+rescues it) are false; the sharper withheld test shows the abstraction the
+hypothesis wanted is still absent — position is necessary and sufficient to read
+a mode.
