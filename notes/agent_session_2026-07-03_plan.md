@@ -13,7 +13,7 @@ below per block).
 
 - Branch: `agent/session-2026-07-03` off the current branch (`phase5-7-8-analysis`)
   so all uncommitted work-in-progress files remain visible.
-- Progress log: append to `notes/agent_progress.md` when a block starts, finishes,
+- Progress log: append to `notes/agent_session_2026-07-03_progress.md` when a block starts, finishes,
   or blocks (timestamp, status, key numbers, blocker if any).
 - Results: numeric artifacts to `results/` as `.npy` (dict pattern used elsewhere in
   repo), narrative + tables to `notes/session_results.md` (one section per block,

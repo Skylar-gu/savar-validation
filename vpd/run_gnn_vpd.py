@@ -29,7 +29,7 @@ from param_decomp_lab.distributed import get_device
 from param_decomp_lab.experiments.utils import ExperimentConfig, init_pd_run
 from param_decomp_lab.seed import set_seed
 
-from train.gnn_forecaster import MeshGNN, MultiRealisationDataset
+from train.gnn.gnn_forecaster import MeshGNN, MultiRealisationDataset
 
 
 class MeshGNNNodeOut(MeshGNN):

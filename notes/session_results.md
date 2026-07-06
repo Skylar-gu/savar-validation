@@ -1,7 +1,7 @@
 # Agent session results — 2026-07-03
 
-Branch `agent/session-2026-07-03`. Plan: `notes/agent_progress.md` +
-`notes/agent_session_plan.md`. Numbers first, interpretation second.
+Branch `agent/session-2026-07-03`. Plan: `notes/agent_session_2026-07-03_progress.md` +
+`notes/agent_session_2026-07-03_plan.md`. Numbers first, interpretation second.
 Closing section (status table, verdicts, follow-ups) at the bottom.
 
 ---
@@ -700,8 +700,8 @@ model-level (FU2 + FU3 triangulate a single mode-agnostic operator).
 
 # Moving-mechanism sub-resolution session — 2026-07-03 (evening)
 
-Spec: `notes/moving_mechanism_subres_spec.md` (supersedes the position-locked
-framing; machinery from `notes/subres_spatial_dealiasing_plan.md`). Sequencing:
+Spec: `notes/moving_mechanism_subres_spec_v1.md` (supersedes the position-locked
+framing; machinery from `notes/subresolution_dealiasing_plan.md`). Sequencing:
 T0 gate → movmech generator + train → P1/P2 → T1–T5 → T6.
 
 ## T0 — spatial de-aliasing identifiability floor (clean Fourier, no GNN)

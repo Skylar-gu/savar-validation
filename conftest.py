@@ -5,7 +5,7 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-for sub in ("", "data_gen", "train", "sae"):
+for sub in ("", "data_gen", "train", "train/cnn", "train/gnn", "sae"):
     p = os.path.join(ROOT, sub) if sub else ROOT
     if p not in sys.path:
         sys.path.insert(0, p)

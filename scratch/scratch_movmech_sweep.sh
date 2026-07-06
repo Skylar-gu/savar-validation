@@ -9,11 +9,11 @@ RAW=data/realisations_movmech_place
 SPLIT=data/splits_movmech_place
 
 for V in blurpool refframe slot; do
-  CKPT=checkpoints_movmech_place_$V
-  ADIR=sae_data_movmech_place_$V
+  CKPT=checkpoints/movmech_place_$V
+  ADIR=sae_data/movmech_place_$V
   echo "############ [$V] TRAIN $(date) ############"
   GNN_VARIANT=$V GNN_CKPT_DIR=$CKPT GNN_SPLIT_DIR=$SPLIT \
-    python3 train/mesh_gnn_variants.py > logs/train_movmech_$V.log 2>&1
+    python3 train/gnn/mesh_gnn_variants.py > logs/train_movmech_$V.log 2>&1
   echo "############ [$V] EXTRACT stride1 $(date) ############"
   mkdir -p $ADIR
   python3 sae/extract_activations_gnn.py --ckpt $CKPT/best.pt --data $RAW \

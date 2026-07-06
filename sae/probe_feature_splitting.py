@@ -27,7 +27,7 @@ import torch.nn.functional as F
 
 sys.stdout.reconfigure(line_buffering=True)
 
-OUT = Path("sae_data_diurnal")
+OUT = Path("sae_data/diurnal")
 INPUT_DIM = 256
 NY = NX = 50
 BORDER = 3

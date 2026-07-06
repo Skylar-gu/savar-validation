@@ -1,6 +1,6 @@
 import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 from pathlib import Path
-D = Path("sae_data_gnn")
+D = Path("sae_data/gnn")
 acts = np.load(D/"activations_full.npy"); Z = np.load(D/"Z_full.npy")
 align = np.load(D/"alignment_per_mode.npy", allow_pickle=True).item()
 

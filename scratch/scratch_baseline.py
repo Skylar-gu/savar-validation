@@ -1,6 +1,6 @@
 import numpy as np, torch, glob, sys
 from pathlib import Path
-sys.path.insert(0,"train")
+sys.path.insert(0,"train/gnn")
 from gnn_forecaster import MeshGNN, MultiRealisationDataset, K, run_epoch, DEVICE
 from torch.utils.data import DataLoader
 
@@ -38,7 +38,7 @@ for name,p in [("predict grand mean", b_grand),
 
 # --- GNN ---
 model = MeshGNN(ny=50,nx=50,k=K).to(DEVICE)
-ck = torch.load("checkpoints_finecadence/best.pt", map_location=DEVICE)
+ck = torch.load("checkpoints/finecadence/best.pt", map_location=DEVICE)
 model.load_state_dict(ck["model_state"]); model.eval()
 preds=[]
 with torch.no_grad():

@@ -90,7 +90,7 @@ runtime:
   device: cuda
   dp: null
 target:
-  checkpoint_path: checkpoints_hetdynamics_eqvar/best.pt
+  checkpoint_path: checkpoints/hetdynamics_eqvar/best.pt
   ny: 50
   nx: 50
   k: 3

@@ -8,7 +8,7 @@ window. We tag every sample with its (y,x), the local field value (content), and
 its mode id (which blob it sits in, or -1 for a dead-zone pixel), so a spatial
 SAE feature can later be scored for position- vs content-selectivity.
 
-Output: sae_data_diurnal/spatial_acts.npz
+Output: sae_data/diurnal/spatial_acts.npz
   X        (Nsamp, 256)  res3 activation vectors
   ys, xs   (Nsamp,)      pixel coordinates
   content  (Nsamp,)      target-frame field value at that pixel
@@ -20,7 +20,7 @@ sys.stdout.reconfigure(line_buffering=True)
 import numpy as np, torch
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
 _ap = argparse.ArgumentParser()
@@ -32,11 +32,11 @@ _ap.add_argument("--pix_per_frame", type=int, default=100)
 _a = _ap.parse_args()
 
 if _a.diurnal:
-    CKPT, DATA, OUT = "checkpoints_diurnal/best.pt", "data/realisations_diurnal", "sae_data_diurnal"
+    CKPT, DATA, OUT = "checkpoints/diurnal/best.pt", "data/realisations_diurnal", "sae_data/diurnal"
 elif _a.dy005:
-    CKPT, DATA, OUT = "checkpoints_dy005/best.pt", "data/realisations_dy005", "sae_data_dy005"
+    CKPT, DATA, OUT = "checkpoints/dy005/best.pt", "data/realisations_dy005", "sae_data/dy005"
 else:
-    CKPT, DATA, OUT = "checkpoints/best.pt", "data/realisations", "sae_data"
+    CKPT, DATA, OUT = "checkpoints/base/best.pt", "data/realisations", "sae_data/base"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NY = NX = 50

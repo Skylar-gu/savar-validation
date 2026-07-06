@@ -1,7 +1,7 @@
 # Agent session progress log — 2026-07-03
 
 Branch: `agent/session-2026-07-03` (off `phase5-7-8-analysis`).
-Plan: `notes/agent_session_plan.md`. Results: `results/*.npy` + `notes/session_results.md`.
+Plan: `notes/agent_session_2026-07-03_plan.md`. Results: `results/*.npy` + `notes/session_results.md`.
 
 ---
 

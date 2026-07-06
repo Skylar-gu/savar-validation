@@ -36,11 +36,11 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from train.gnn_forecaster import MeshGNN, K
+from train.gnn.gnn_forecaster import MeshGNN, K
 from eval_sae_metrics import INPUT_DIM, N_MODES, load_sae, encode
 
 SPLIT  = os.environ.get("ST_SPLIT", "data/splits_hetdynamics_eqvar/test")
-CKPT   = os.environ.get("ST_CKPT", "checkpoints_hetdynamics_eqvar/best.pt")
+CKPT   = os.environ.get("ST_CKPT", "checkpoints/hetdynamics_eqvar/best.pt")
 N_WIN  = int(os.environ.get("ST_NWIN", 240))
 TARGETS = {5: 216, 6: 475, 7: 143}          # mode -> matched feature (Block C)
 ALPHAS_SIG = np.array([-3.0, -1.0, 1.0, 3.0])
@@ -52,10 +52,10 @@ ckpt = torch.load(CKPT, map_location=DEVICE, weights_only=False)
 model = MeshGNN(50, 50).to(DEVICE)
 model.load_state_dict(ckpt["model_state"])
 model.eval()
-sae, act_mu, act_sd = load_sae("sae_data_hetdynamics_eqvar/sae_mixed.pt")
+sae, act_mu, act_sd = load_sae("sae_data/hetdynamics_eqvar/sae_mixed.pt")
 
 # σ_f from the training-distribution codes (mode-j stream)
-acts_full = np.load("sae_data_hetdynamics_eqvar/activations_full.npy")
+acts_full = np.load("sae_data/hetdynamics_eqvar/activations_full.npy")
 sigma_f, act_rate = {}, {}
 for j, f in TARGETS.items():
     stream = acts_full[:, j].reshape(-1, INPUT_DIM)

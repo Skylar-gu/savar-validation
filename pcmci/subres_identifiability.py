@@ -2,8 +2,8 @@
 T0 — spatial de-aliasing identifiability floor (clean 1-D Fourier testbed, no GNN).
 
 Go/no-go gate for the moving-mechanism sub-resolution battery
-(notes/moving_mechanism_subres_spec.md; machinery from
-notes/subres_spatial_dealiasing_plan.md, Testbed alpha).
+(notes/moving_mechanism_subres_spec_v1.md; machinery from
+notes/subresolution_dealiasing_plan.md, Testbed alpha).
 
 Setup
 -----

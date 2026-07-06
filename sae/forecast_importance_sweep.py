@@ -27,7 +27,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 sys.stdout.reconfigure(line_buffering=True)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
 _ap = argparse.ArgumentParser()
@@ -38,10 +38,10 @@ _ap.add_argument("--n_real", type=int, default=8, help="realisations to evaluate
 _ap.add_argument("--t_stride", type=int, default=20, help="temporal window stride")
 _a = _ap.parse_args()
 
-CKPT = "checkpoints_diurnal/best.pt"
+CKPT = "checkpoints/diurnal/best.pt"
 DATA = ("data/realisations_diurnal" if _a.split == "raw"
         else f"data/splits_diurnal/{_a.split}")
-OUT = Path("sae_data_diurnal")
+OUT = Path("sae_data/diurnal")
 INPUT_DIM, N_FEATURES, K_TOPK = 256, 512, 25
 NY = NX = 50
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

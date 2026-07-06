@@ -1,6 +1,6 @@
 """
 Generate MOVING-MECHANISM SAVAR realisations with fine sub-mechanisms
-(spec: notes/moving_mechanism_subres_spec.md; fork of generate_hetdynamics.py).
+(spec: notes/moving_mechanism_subres_spec_v1.md; fork of generate_hetdynamics.py).
 
 Two changes vs generate_hetdynamics.py
 --------------------------------------

@@ -38,7 +38,7 @@ from pathlib import Path
 from sklearn.decomposition import PCA
 from scipy.stats import pearsonr
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
 _ap = argparse.ArgumentParser()
@@ -48,21 +48,21 @@ _ap.add_argument("--binary", action="store_true", help="Use disjoint-binary-mask
 _args = _ap.parse_args()
 
 if _args.diurnal:
-    CKPT_PATH = Path("checkpoints_diurnal/best.pt")
+    CKPT_PATH = Path("checkpoints/diurnal/best.pt")
     DATA_DIR  = Path("data/realisations_diurnal")
-    OUT_DIR   = Path("sae_data_diurnal")
+    OUT_DIR   = Path("sae_data/diurnal")
 elif _args.dy005:
-    CKPT_PATH = Path("checkpoints_dy005/best.pt")
+    CKPT_PATH = Path("checkpoints/dy005/best.pt")
     DATA_DIR  = Path("data/realisations_dy005")
-    OUT_DIR   = Path("sae_data_dy005")
+    OUT_DIR   = Path("sae_data/dy005")
 elif _args.binary:
-    CKPT_PATH = Path("checkpoints_binary/best.pt")
+    CKPT_PATH = Path("checkpoints/binary/best.pt")
     DATA_DIR  = Path("data/realisations_binary")
-    OUT_DIR   = Path("sae_data_binary")
+    OUT_DIR   = Path("sae_data/binary")
 else:
-    CKPT_PATH = Path("checkpoints/best.pt")
+    CKPT_PATH = Path("checkpoints/base/best.pt")
     DATA_DIR  = Path("data/realisations")
-    OUT_DIR   = Path("sae_data")
+    OUT_DIR   = Path("sae_data/base")
 
 EXTRACT_BS = 128   # windows per forward pass during extraction
 

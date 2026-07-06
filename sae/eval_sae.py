@@ -46,7 +46,7 @@ class TopKSAE(nn.Module):
         recon = self.decoder(acts)
         return acts, recon
 
-DATA_DIR = Path("sae_data")
+DATA_DIR = Path("sae_data/base")
 
 THRESH_STRONG = 0.5   # "feature represents mode"
 THRESH_WEAK   = 0.3   # "feature relates to mode"

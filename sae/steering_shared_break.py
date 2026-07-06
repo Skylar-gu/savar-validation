@@ -16,7 +16,7 @@ Differences vs Block F:
   * targets (mode -> feature) come from the variant's own Hungarian match.
 
 Usage:
-  python3 sae/steering_shared_break.py --datadir sae_data_hetdynamics_eqvar_whiten \
+  python3 sae/steering_shared_break.py --datadir sae_data/hetdynamics_eqvar_whiten \
       --ckpt sae_mixed_topk_seed0_final.pt --targets 5:f5,6:f6,7:f7 --tag whiten
 Output: results/steering_shared_break_<tag>.npy
 """
@@ -30,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from train.gnn_forecaster import MeshGNN, K
+from train.gnn.gnn_forecaster import MeshGNN, K
 from eval_sae_metrics import INPUT_DIM, N_MODES, load_sae, encode
 
 ap = argparse.ArgumentParser()
@@ -44,7 +44,7 @@ TARGETS = {int(kv.split(":")[0]): int(kv.split(":")[1])
            for kv in a.targets.split(",")}
 
 SPLIT = os.environ.get("ST_SPLIT", "data/splits_hetdynamics_eqvar/test")
-CKPT = os.environ.get("ST_CKPT", "checkpoints_hetdynamics_eqvar/best.pt")
+CKPT = os.environ.get("ST_CKPT", "checkpoints/hetdynamics_eqvar/best.pt")
 N_WIN = int(os.environ.get("ST_NWIN", 240))
 ALPHAS_SIG = np.array([-3.0, -1.0, 1.0, 3.0])
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

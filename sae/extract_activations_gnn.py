@@ -19,13 +19,13 @@ The gate-layer to read is the output of layers[N_MP-1] (default; overridable wit
 Window alignment: window t = frames[t:t+K] predicts frame t+K, so the feature is
 aligned to Z_j(t+K) — identical to the CNN pipeline.
 
-Outputs (written to sae_data_gnn/)
+Outputs (written to sae_data/gnn/)
 ----------------------------------
   activations_full.npy  (100, 8, T_eff, 256)   W[j,:] @ H(t) per realisation/mode
   Z_full.npy            (100, 8, T_eff)         Z_j(t+K) aligned to above
   ceilings.npy          (8,)                    per-mode ridge |r| ceiling (out-of-fold)
 
-The per-mode SAE train/eval scripts consume sae_data_gnn/ via their --gnn flag.
+The per-mode SAE train/eval scripts consume sae_data/gnn/ via their --gnn flag.
 """
 
 import sys, argparse
@@ -39,15 +39,15 @@ from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import cross_val_predict
 from scipy.stats import pearsonr
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
 from gnn_forecaster import MeshGNN, K, HIDDEN, N_MP
 
 _ap = argparse.ArgumentParser()
-_ap.add_argument("--ckpt", default="checkpoints_finecadence/best.pt",
+_ap.add_argument("--ckpt", default="checkpoints/finecadence/best.pt",
                  help="GNN checkpoint (model_state) to hook")
 _ap.add_argument("--data", default="data/realisations_finecadence",
                  help="raw realisation_*.npz dir (observations, latent_states, W)")
-_ap.add_argument("--out", default="sae_data_gnn", help="output dir")
+_ap.add_argument("--out", default="sae_data/gnn", help="output dir")
 _ap.add_argument("--layer", type=int, default=N_MP - 1,
                  help="which MP layer's output to read (default: last)")
 _ap.add_argument("--stride", type=int, default=1,

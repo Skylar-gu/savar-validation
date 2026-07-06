@@ -134,11 +134,11 @@ if _args.deseason and not _args.features:
     print("[warn] --deseason given without --features; deseasoning the latent Z.")
 
 if _args.diurnal:
-    DATA_DIR, SAE_DIR, variant = Path("data/realisations_diurnal"), Path("sae_data_diurnal"), "_diurnal"
+    DATA_DIR, SAE_DIR, variant = Path("data/realisations_diurnal"), Path("sae_data/diurnal"), "_diurnal"
 elif _args.dy005:
-    DATA_DIR, SAE_DIR, variant = Path("data/realisations_dy005"), Path("sae_data_dy005"), "_dy005"
+    DATA_DIR, SAE_DIR, variant = Path("data/realisations_dy005"), Path("sae_data/dy005"), "_dy005"
 else:
-    DATA_DIR, SAE_DIR, variant = Path("data/realisations"), Path("sae_data"), ""
+    DATA_DIR, SAE_DIR, variant = Path("data/realisations"), Path("sae_data/base"), ""
 
 # suffix encodes the full data variant so runs never clobber one another (nor
 # run_pcmci.py's canonical results/pcmci_results.npy). The cond-ind test is tagged

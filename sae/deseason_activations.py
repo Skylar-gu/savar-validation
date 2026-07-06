@@ -10,8 +10,8 @@ the PCMCI deseasonalization (Z − ensemble mean) that restored F1 to 0.825.
 
 Cheap: operates on already-extracted activations, no CNN forward passes.
 
-Reads  sae_data_diurnal/{activations_full,Z_full}.npy
-Writes sae_data_diurnal_deseason/{activations_full,Z_full}.npy
+Reads  sae_data/diurnal/{activations_full,Z_full}.npy
+Writes sae_data/diurnal_deseason/{activations_full,Z_full}.npy
 """
 
 import sys, argparse
@@ -25,7 +25,7 @@ _ap.add_argument("--diurnal", action="store_true")
 _ap.add_argument("--dy005", action="store_true")
 _args = _ap.parse_args()
 
-base = "sae_data_diurnal" if _args.diurnal else ("sae_data_dy005" if _args.dy005 else "sae_data")
+base = "sae_data/diurnal" if _args.diurnal else ("sae_data/dy005" if _args.dy005 else "sae_data/base")
 SRC = Path(base)
 DST = Path(base + "_deseason")
 DST.mkdir(exist_ok=True)

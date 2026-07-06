@@ -21,14 +21,20 @@ deseasonalization removes that confound. See `notes/diurnal_datagen_summary.md`.
 | Folder | Contents |
 |--------|----------|
 | `data_gen/` | model definition + dataset generators (`instantiate_model.py`, `generate_*.py`, `split_*.py`) |
-| `train/` | CNN forecaster + training (`cnn_forecaster.py`, `train_dy005.py`, `resume_training.py`, `verify_gpu.py`) |
-| `pcmci/` | PCMCI causal discovery (`run_pcmci.py`, `run_pcmci_diurnal.py` — raw vs deseasonalized) |
-| `sae/` | activation extraction, per-mode SAEs, evaluation, cycle/PC0 + feature-decomposition analyses |
+| `train/cnn/` | CNN forecaster + training (`cnn_forecaster.py`, `train_dy005.py`, `resume_training.py`, `verify_gpu.py`) |
+| `train/gnn/` | MeshGNN forecaster + architecture variants (`gnn_forecaster.py`, `mesh_gnn_variants.py`) |
+| `pcmci/` | PCMCI / PCMCI+ causal discovery + DMD timescale checks |
+| `sae/` | activation extraction, per-mode / mixed SAEs, evaluation, probes, steering |
+| `vpd/` | adVersarial Parameter Decomposition on the GNN (uses vendored `param-decomp/`) |
 | `baselines/` | RMSE baselines (oracle / persistence) |
 | `visualization/` | model / mode visualizations |
-| `notes/` | pipeline spec, requirements, and results write-ups |
-| `results/` | small PCMCI result arrays |
+| `notes/` | pipeline spec, requirements, and results write-ups (start with `summary_jul3.md`) |
+| `checkpoints/<variant>/` | trained model checkpoints, one subfolder per experiment (gitignored) |
+| `sae_data/<variant>/` | extracted activations + trained SAEs, one subfolder per experiment (gitignored) |
+| `data/` | generated datasets, one subfolder per experiment (gitignored) |
+| `results/` | small result arrays (`.npy`) |
 | `figures/` | generated figures |
+| `scratch/` | ad-hoc / historical exploration scripts and pipeline logs |
 
 Orchestrators (run from repo root): `run_diurnal_pipeline.sh` (CNN → PCMCI → SAE)
 and `run_sae_deseason.sh` (deseasonalized SAE chain).

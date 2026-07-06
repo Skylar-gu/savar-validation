@@ -1,7 +1,7 @@
 """
 Resume CNN training from a checkpoint.
 Usage: python3 -u resume_training.py [checkpoint_path]
-Default: checkpoints/epoch_030.pt  → trains epochs 31-50
+Default: checkpoints/base/epoch_030.pt  → trains epochs 31-50
 """
 
 import sys

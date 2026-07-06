@@ -48,7 +48,7 @@ BATCH_SIZE = int(os.environ.get("GNN_BATCH", 32))
 LR         = 3e-4
 EPOCHS     = int(os.environ.get("GNN_EPOCHS", 40))
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-CKPT_DIR   = os.environ.get("GNN_CKPT_DIR", "checkpoints_finecadence")
+CKPT_DIR   = os.environ.get("GNN_CKPT_DIR", "checkpoints/finecadence")
 SPLIT_DIR  = os.environ.get("GNN_SPLIT_DIR", os.path.join("data", "splits_finecadence"))
 
 

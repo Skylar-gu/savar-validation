@@ -27,7 +27,7 @@ from pathlib import Path
 from eval_sae_metrics import (INPUT_DIM, N_MODES, load_sae, encode,
                               metric_suite, print_suite)
 
-DATADIR = Path("sae_data_hetdynamics_eqvar")
+DATADIR = Path("sae_data/hetdynamics_eqvar")
 SEEDS   = (0, 1, 2)
 ARCHS   = ("topk", "kan")
 
@@ -93,8 +93,8 @@ for tag, f in [("finecadence", "scratchpad/blockC/metrics_finecadence.npy"),
 
 # old best-|r| numbers side-by-side
 old = {}
-for tag, d in [("finecadence", "sae_data_gnn"), ("hetdynamics", "sae_data_hetdynamics"),
-               ("eqvar", "sae_data_hetdynamics_eqvar")]:
+for tag, d in [("finecadence", "sae_data/gnn"), ("hetdynamics", "sae_data/hetdynamics"),
+               ("eqvar", "sae_data/hetdynamics_eqvar")]:
     old[tag] = {}
     for variant, f in [("permode", "alignment_per_mode"), ("mixed", "alignment_mixed")]:
         p = Path(d) / f"{f}.npy"

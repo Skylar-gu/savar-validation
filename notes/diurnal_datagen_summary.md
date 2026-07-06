@@ -143,7 +143,7 @@ specificity still negative for 7/8 (X6 the lone +0.05).
    test directly whether the collapse survives once the data is no longer
    linear-Gaussian. Verified material: nonlinear features add +0.066 R² to a
    linear mode predictor on the nonlinear data vs only +0.010 on the linear
-   diurnal data. See `notes/REPO_SUMMARY_AND_AUDIT.md`.
+   diurnal data. See `notes/repo_summary_and_audit.md`.
 
 Both confounds — causal-graph (PCMCI) and representational (SAE/PC0) — are cleanly
 removed by the *same* ensemble-mean deseasonalization; the difference is that

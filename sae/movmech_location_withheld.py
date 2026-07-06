@@ -33,7 +33,7 @@ Read-out
 
 Usage:
   python3 sae/movmech_location_withheld.py \
-      --ckpt checkpoints_movmech_place/best.pt --variant plain \
+      --ckpt checkpoints/movmech_place/best.pt --variant plain \
       --raw data/realisations_movmech_place --tag place_plain \
       [--nwin 16 --steps 300 --seed 0]
 Output: results/movmech_withheld_<tag>.npy  (+ prints a per-mode table)
@@ -140,7 +140,7 @@ def main():
     GY = torch.from_numpy(gy.ravel().astype(np.float32)).to(dev)
 
     # ── model + hook (final node H, exactly as the extract/oracle pipeline) ──
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "gnn"))
     from gnn_forecaster import MeshGNN, K
     if a.variant == "plain":
         model = MeshGNN(ny=NY, nx=NX, k=K).to(dev)

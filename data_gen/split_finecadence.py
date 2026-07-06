@@ -2,7 +2,7 @@
 
 Mirrors split_nonlinear.py. Carries nl_meta / ng_meta / fine_edges through so the
 nonlinearity, non-Gaussianity, and fine-lag settings stay recoverable per split.
-The GNN forecaster (train/gnn_forecaster.py) reads "observations" of shape
+The GNN forecaster (train/gnn/gnn_forecaster.py) reads "observations" of shape
 (T_split, ny, nx) from these splits.
 """
 

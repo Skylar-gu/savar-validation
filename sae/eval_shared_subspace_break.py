@@ -5,7 +5,7 @@ For each variant datadir (proj = k=1 shared-direction projection, whiten = ZCA)
 and each seed {0,1,2}, score the FINAL checkpoint (never recon-MSE-selected)
 with sae/eval_sae_metrics.py's suite (Hungarian MCC, uniqueness, matched F1),
 paired against the Block-C baseline TopK seeds trained on the raw activations
-(sae_data_hetdynamics_eqvar/sae_mixed_topk_seed{n}_final.pt).
+(sae_data/hetdynamics_eqvar/sae_mixed_topk_seed{n}_final.pt).
 
 Output: results/sae_shared_subspace_break.npy
 """
@@ -20,9 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eval_sae_metrics import eval_dir
 
 VARIANTS = {
-    "baseline": "sae_data_hetdynamics_eqvar",
-    "proj": "sae_data_hetdynamics_eqvar_proj",
-    "whiten": "sae_data_hetdynamics_eqvar_whiten",
+    "baseline": "sae_data/hetdynamics_eqvar",
+    "proj": "sae_data/hetdynamics_eqvar_proj",
+    "whiten": "sae_data/hetdynamics_eqvar_whiten",
 }
 SEEDS = (0, 1, 2)
 

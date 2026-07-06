@@ -6,7 +6,7 @@ paths, device, CUDA status, git commit) and a failure line on error:
 
     from diagnostics import run_context, run_failure
     run_context(stage="cnn_train", dataset="data/splits_diurnal",
-                checkpoint="checkpoints_diurnal/best.pt")
+                checkpoint="checkpoints/diurnal/best.pt")
     try:
         ...
     except Exception as e:

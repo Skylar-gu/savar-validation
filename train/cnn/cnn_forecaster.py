@@ -24,7 +24,7 @@ BATCH_SIZE    = 64
 LR            = 3e-4
 EPOCHS        = 50
 DEVICE        = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-CKPT_DIR      = "checkpoints"
+CKPT_DIR      = "checkpoints/base"
 SPLIT_DIR     = os.path.join("data", "splits")
 
 os.makedirs(CKPT_DIR, exist_ok=True)
@@ -242,20 +242,20 @@ if __name__ == "__main__":
     import argparse
     _ap = argparse.ArgumentParser()
     _ap.add_argument("--diurnal", action="store_true",
-                     help="Train on data/splits_diurnal → checkpoints_diurnal/")
+                     help="Train on data/splits_diurnal → checkpoints/diurnal/")
     _ap.add_argument("--dy005", action="store_true",
-                     help="Train on data/splits_dy005 → checkpoints_dy005/")
+                     help="Train on data/splits_dy005 → checkpoints/dy005/")
     _ap.add_argument("--binary", action="store_true",
-                     help="Train on data/splits_binary → checkpoints_binary/")
+                     help="Train on data/splits_binary → checkpoints/binary/")
     _a = _ap.parse_args()
     if _a.diurnal:
         SPLIT_DIR = os.path.join("data", "splits_diurnal")
-        CKPT_DIR  = "checkpoints_diurnal"
+        CKPT_DIR  = "checkpoints/diurnal"
     elif _a.dy005:
         SPLIT_DIR = os.path.join("data", "splits_dy005")
-        CKPT_DIR  = "checkpoints_dy005"
+        CKPT_DIR  = "checkpoints/dy005"
     elif _a.binary:
         SPLIT_DIR = os.path.join("data", "splits_binary")
-        CKPT_DIR  = "checkpoints_binary"
+        CKPT_DIR  = "checkpoints/binary"
     os.makedirs(CKPT_DIR, exist_ok=True)
     main()

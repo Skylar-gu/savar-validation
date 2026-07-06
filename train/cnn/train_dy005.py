@@ -1,6 +1,6 @@
 """
 CNN training for D_y = 0.05 experiment.
-Same architecture as cnn_forecaster.py; uses data/splits_dy005/ and checkpoints_dy005/.
+Same architecture as cnn_forecaster.py; uses data/splits_dy005/ and checkpoints/dy005/.
 """
 
 import sys
@@ -20,7 +20,7 @@ from cnn_forecaster import (
 )
 
 SPLIT_DIR = os.path.join("data", "splits_dy005")
-CKPT_DIR  = "checkpoints_dy005"
+CKPT_DIR  = "checkpoints/dy005"
 os.makedirs(CKPT_DIR, exist_ok=True)
 
 # ── datasets ─────────────────────────────────────────────────────────────────
