@@ -1,0 +1,57 @@
+\documentclass[11pt]{article}
+
+% ---------------------------------------------------------------------------
+% Project description: Causal structure in the internal representations of a
+% data-driven weather model (GraphCast). Audience: advisor + collaborators.
+% This document doubles as the seed for the eventual paper.
+% ---------------------------------------------------------------------------
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black,
+            urlcolor=blue!50!black}
+
+% Inline editorial marker for things still to fill in.
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\note}[1]{\textcolor{blue!60!black}{\textit{(#1)}}}
+
+\title{Does a Data-Driven Weather Model Learn Causal Structure?\\
+       \large Causal Graphs from Sparse-Autoencoder Features and Mechanisms from
+       Parameter Decompositions, Validated on a Synthetic Benchmark}
+\author{\todo{authors}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\todo{Write last. One paragraph: weather foundation models forecast well but are
+opaque; do their internal representations encode the \emph{causal} structure of the
+atmosphere or only correlational shortcuts? Two complementary probes: (i) extend
+sparse-autoencoder (SAE) interpretability of GraphCast from single-feature
+interventions to systematic \emph{causal discovery} over the graph of features;
+(ii) decompose the forecaster's parameters into mechanisms with ablation-defined
+causal importance (VPD). Both validated on SAVAR, a synthetic system with a known
+ground-truth causal graph, including under temporal subsampling/aliasing and mesh
+heterogeneity.}
+\end{abstract}
+
+\input{sections/intro}
+\input{sections/background}
+\input{sections/approach}
+\input{sections/savar_results}
+\input{sections/extensions}
+\input{sections/open_questions}
+\input{sections/contributions}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

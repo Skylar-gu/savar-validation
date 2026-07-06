@@ -1,0 +1,58 @@
+\section{Open Questions and Risks}
+\label{sec:open}
+
+\paragraph{Feature identity across time.} The time axis comes from the trajectory
+(Sec.~\ref{sec:temporal}), and the whole construction assumes a feature means the
+same thing at step $t$ and step $t{+}1$. If a feature drifts in meaning, every
+causal edge built on its time series is suspect. We still owe this an explicit
+stability check on GraphCast rollout data.
+
+\paragraph{Model dynamics vs.\ atmospheric dynamics.} Discovery on internal
+features recovers the causal structure of the model's computation. Whether that
+matches the atmosphere's causal structure is a separate empirical question. The
+interpretability framing (``what did the model learn?'') legitimately targets the
+model's structure, but every claim should say which of the two it is about.
+
+\paragraph{No ground truth in GraphCast.} SAVAR lets us score recovered graphs;
+GraphCast never will. Validation there has to lean on known physical relationships
+(the diurnal cycle driving near-surface temperature, say) and on interventional
+consistency in the style of~\cite{macmillan2025}: an edge $A \to B$ produced by
+discovery should survive an actual intervention on $A$.
+
+\paragraph{Polysemanticity.} In every SAVAR variant tested, the best-aligned
+features remain polysemantic, and a polysemantic feature is an ambiguous causal
+variable. Possible responses include stricter monosemanticity criteria, per-region
+SAEs, or grouping features before discovery. The heterogeneous-dynamics experiment
+(Sec.~\ref{sec:homog}) will show whether specialization appears once the task
+rewards it; if it does not, the grouping problem moves to the center of the
+project.
+
+\paragraph{Orientation of contemporaneous edges.} The aliasing risk itself is now
+quantified: Sec.~\ref{sec:subsample} shows plain PCMCI collapsing under
+subsampling while PCMCI+ recovers the aliased adjacencies. Time priority still
+orients every lagged edge, and a time-unrolled lagged graph is a DAG, so feedback
+loops such as X2$\to$X0 stay identifiable. The unsolved part is direction at
+$\tau=0$: ParCorr orients only $8$--$30\%$ of the contemporaneous edges it finds,
+despite innovations skewed enough to make the directions identifiable in
+principle. A LiNGAM-style orientation step on top of the PCMCI+ adjacencies is the
+natural fix and is not yet implemented. On GraphCast at 6-hour cadence, sub-step
+atmospheric pathways will alias, and the sweep in Table~\ref{tab:subsample} is a
+quantitative preview of what that costs.
+
+\paragraph{Weak-signal regimes.} The fine-cadence one-step task leaves the
+forecaster barely above climatology, capping the effect size any ablation can
+show (Sec.~\ref{sec:vpd}). Conclusions there rest on which components matter and
+where, never on how much. GraphCast at 6 hours is far above climatology, so this
+is a SAVAR-specific worry for now, but it will return at long lead times as
+rollout skill decays.
+
+\paragraph{Overlapping modes.} Every SAVAR variant so far uses spatially disjoint
+mode maps, so the pixel-to-mode projection is clean. Overlapping modes (closer
+centers, wider spatial profiles) would degrade the projection and dilute the SAE
+features. The knob exists in the generator and has not been turned.
+
+\paragraph{Method disagreement on GraphCast.} If PCMCI+, TSCI, and DYNOTEARS
+disagree on GraphCast features, some adjudication rule is needed, and it should be
+calibrated on SAVAR. Section~\ref{sec:methodcompare} is the start of one: on
+activation-derived series, weight PCMCI+ most, and treat edges only DYNOTEARS
+reports with caution.

@@ -1,0 +1,52 @@
+\section{Motivation and Research Question}
+\label{sec:intro}
+
+Data-driven weather models---GraphCast~\cite{graphcast}, GenCast, Pangu-Weather,
+FourCastNet---now match or beat operational numerical weather prediction on
+medium-range skill, at a small fraction of the compute. What they learned in order
+to do so is unknown. A physics solver can be read term by term against the
+conservation laws it discretizes; a trained graph network cannot. The opacity has
+practical costs: forecasts of cyclones, heat waves, and floods feed real decisions,
+and a model leaning on training-distribution correlations may fail quietly as the
+climate drifts away from that distribution. There is a scientific cost too. If the
+model has internalized genuine atmospheric dynamics, its internals amount to a
+compressed description of those dynamics that we are currently unable to read.
+
+A model can be highly skillful while having learned only correlational structure.
+The question that separates a statistical emulator from a model of the underlying
+system is causal:
+
+\begin{quote}
+Does GraphCast's internal representation encode the \emph{causal structure} of the
+atmosphere, recoverable as a directed graph over interpretable features, or only
+the correlational structure sufficient for next-step prediction?
+\end{quote}
+
+Accuracy does not settle this. A model at the predictability ceiling may have
+organized its computation around the true dependency structure of the atmosphere,
+or around shortcuts that predict equally well in distribution; observational
+evaluation cannot tell the two apart, which is why interpretability claims of this
+kind need interventional or otherwise causal grounding to
+generalize~\cite{joshi2026}.
+
+We approach the question along two routes. The first treats sparse-autoencoder
+(SAE) features of the model's activations as variables and runs time-series causal
+discovery over them. The second decomposes the model's weights into mechanisms
+whose importance is defined by ablation (Sec.~\ref{sec:approach}). Neither can be
+validated on GraphCast itself, where no ground-truth feature graph exists, so we
+validate both on SAVAR, a synthetic spatiotemporal system whose causal graph is
+known by construction (Secs.~\ref{sec:savar} and~\ref{sec:ext}).
+
+\subsection{Relation to prior work}
+
+MacMillan and Ouellette~\cite{macmillan2025} trained SAEs on GraphCast activations
+and found features corresponding to recognizable physics: tropical cyclones,
+atmospheric rivers, diurnal and seasonal cycles, precipitation, sea ice, geographic
+position. Scaling a single tropical-cyclone feature changed the forecast in a
+physically consistent way, so at least some features are causally connected to the
+output. What their analysis leaves open, and what they themselves name as the open
+problem, is how the features relate to one another. A single-feature intervention
+establishes that a feature matters for the forecast; it says nothing about the web
+of lagged influences among features, which is where any learned analogue of
+atmospheric dynamics would have to live. Recovering that graph is the aim of this
+project.

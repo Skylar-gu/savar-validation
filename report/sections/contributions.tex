@@ -1,0 +1,51 @@
+\section{Contributions and Plan}
+\label{sec:contributions}
+
+\subsection{Intended contributions}
+
+\begin{enumerate}[nosep]
+  \item Extend SAE interpretability of GraphCast from single-feature
+        interventions~\cite{macmillan2025} to causal-graph discovery over the
+        feature set.
+  \item Validate the pipeline on SAVAR's known ground truth: SAE features support
+        causal-structure recovery (latent F1 $0.825$ vs.\ feature F1 $0.695$), and
+        the recovered topology relates to forecast importance.
+  \item Method guidance for the no-ground-truth setting, from comparing PCMCI+,
+        TSCI, and DYNOTEARS on activation-derived series, including under temporal
+        subsampling. The sweep in Sec.~\ref{sec:subsample} says when PCMCI+ is
+        required and locates the remaining orientation gap.
+  \item Separate decodable-but-inert representational artifacts (grid-locked and
+        geographic-coding features) from content the forecast depends on, via
+        causal ablation on the SAE side and ablation-defined gates on the
+        parameter side.
+  \item A parameter-space route: VPD on a message-passing forecaster yields
+        spatial mechanism-usage maps, these show a depth gradient from mesh-locked
+        to content-locked mechanisms, and the grid-lock-is-epiphenomenal result
+        comes out of a single ablation-defined object (Sec.~\ref{sec:vpd}). To our
+        knowledge this is the first application of the SPD family to a GNN.
+  \item An attribution discipline for negative results: the missing mode
+        specialization traces to the generator's dynamic homogeneity, and a
+        running experiment tests that explanation directly
+        (Sec.~\ref{sec:homog}).
+\end{enumerate}
+
+\subsection{Milestones}
+
+\todo{Confirm/adjust with the advisor.}
+\begin{enumerate}[nosep]
+  \item SAVAR validation writeup (Sec.~\ref{sec:savar}) --- done.
+  \item PCMCI/TSCI/DYNOTEARS comparison table --- done.
+  \item Fine-cadence generator; subsampling sweep; switch to PCMCI+ --- done.
+  \item Heterogeneous-mesh GNN forecaster; per-mode SAEs on it --- done.
+  \item VPD decomposition of the GNN's message-passing MLPs --- done.
+  \item Heterogeneous-dynamics experiment (specialization test) --- running.
+  \item LiNGAM-style orientation of contemporaneous edges --- not started.
+  \item Overlapping-mode variant --- not started.
+  \item GraphCast: activation collection on teacher-forced trajectories; SAE
+        training, or reuse of the setup from~\cite{macmillan2025}.
+  \item GraphCast: feature-stability check; unsupervised feature grouping
+        (Ising/Leiden) before discovery.
+  \item GraphCast: causal discovery on features; physical-plausibility and
+        interventional-consistency evaluation.
+  \item Write-up.
+\end{enumerate}

@@ -1,0 +1,63 @@
+\section{Approach}
+\label{sec:approach}
+
+\subsection{Route 1: causal discovery over SAE features}
+
+\begin{enumerate}[nosep]
+  \item Run the forecaster over held-out trajectories and record intermediate
+        (processor) activations at every step.
+  \item Train an SAE on those activations to obtain a sparse feature basis.
+  \item For each trajectory, read out each feature's activation at every step,
+        giving multivariate time series $\{a_f(t)\}_{f=1}^{F}$.
+  \item Run PCMCI+ over the feature series (TSCI and DYNOTEARS serve as
+        cross-checks) to recover a lagged directed graph among features.
+  \item Score the graph. On SAVAR this means precision, recall, F1, sign accuracy,
+        and threshold-free AUROC/AUPRC against the known graph. On GraphCast, where
+        no ground truth exists, it means consistency with known physical
+        relationships and with interventional edits in the style
+        of~\cite{macmillan2025}.
+\end{enumerate}
+
+Agreement among the three discovery methods on SAVAR, where we can score them,
+calibrates how much to trust each of them later on GraphCast, where we cannot.
+
+\subsection{Route 2: parameter decomposition}
+
+The second route applies VPD (Sec.~\ref{sec:pd-background}) to the forecaster's
+shared message-passing MLPs. Each weight matrix becomes a set of rank-one
+components with a per-node gate; averaging the gate over inputs and reshaping to
+the grid gives every component a spatial usage map. Since the components themselves
+are shared across all nodes, exactly as in GraphCast's processor, any position
+specificity in those maps had to emerge through the gate.
+
+The two routes answer different questions and inherit different weaknesses. SAE
+features live in activation space and come with a time axis, so they support
+claims about dynamics, but their causal role must be established after the fact
+and the time axis brings aliasing problems (below). VPD components live in weight
+space, their importance is an ablation by construction, and no time axis is
+involved; what they cannot directly show is how the represented quantities evolve.
+
+\subsection{Do SAE features support temporal causal claims?}
+\label{sec:temporal}
+
+An SAE is trained per activation vector, so a feature is an atemporal descriptor
+of a single state, and it is fair to ask whether causal discovery, which is about
+time, is even well posed on such features. It is, because the time axis never
+comes from the SAE. It comes from the trajectory: the SAE supplies the variables,
+the forecaster's evolution across steps supplies the dynamics, and reading a
+feature's activation across steps gives an ordinary time series.
+
+The argument comes with caveats, which we treat as real limitations and return to
+in Sec.~\ref{sec:open}. A feature has to keep its meaning from one step to the
+next, or its time series is incoherent. On GraphCast the collection regime
+matters: free-running rollouts accumulate error and drift off-distribution, so the
+series is non-stationary and conditional-independence tests are confounded,
+whereas teacher-forced trajectories (consecutive single steps on observed states)
+stay approximately stationary. We therefore collect on teacher-forced trajectories
+unless closed-loop behaviour is itself under study. Discovery on internal features
+also recovers the causal structure of the \emph{model's} computation, which need
+not coincide with the atmosphere's; for the question ``what did the model learn?''
+the model's structure is the right target, but the claim should be stated as such.
+And the 6-hour step bounds the resolvable lag: anything faster aliases into
+contemporaneous dependence. Section~\ref{sec:subsample} measures this effect and
+what PCMCI+ recovers of it.
