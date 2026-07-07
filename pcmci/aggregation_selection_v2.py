@@ -38,8 +38,9 @@ from pathlib import Path
 from scipy import stats
 
 ROOT     = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data/realisations_hetdynamics_eqvar"
+DATA_DIR = Path(os.environ.get("E2_DATA_DIR", ROOT / "data/realisations_hetdynamics_eqvar"))
 RES_DIR  = ROOT / "results"
+E2_TAG   = os.environ.get("E2_TAG", "")            # suffix for rung reruns
 
 N_REAL  = int(os.environ.get("E2_NREAL", 6))
 ALPHA   = float(os.environ.get("E2_ALPHA", 0.01))
@@ -50,7 +51,7 @@ SEED    = int(os.environ.get("E2_SEED", 0))
 paths = sorted(DATA_DIR.glob("realisation_*.npz"))
 rng = np.random.default_rng(SEED)
 
-src = np.load(RES_DIR / "litext_e1_discovery.npy", allow_pickle=True).item()
+src = np.load(RES_DIR / f"litext_e1_discovery{E2_TAG}.npy", allow_pickle=True).item()
 CANDS = src["cands"]
 F1S = {k: float(v["F1"]) for k, v in src["graph"].items()}
 print(f"candidates: {sorted(CANDS)}")
@@ -196,5 +197,5 @@ for s in ("S_info", "S_dup", "S_agree", "S_suff", "S_total"):
     print(f"  {s:<8} {rho:+.3f}")
 
 os.makedirs(RES_DIR, exist_ok=True)
-np.save(RES_DIR / "litext_e2_adag_v2.npy", out, allow_pickle=True)
-print("\nsaved -> results/litext_e2_adag_v2.npy")
+np.save(RES_DIR / f"litext_e2_adag_v2{E2_TAG}.npy", out, allow_pickle=True)
+print(f"\nsaved -> results/litext_e2_adag_v2{E2_TAG}.npy")

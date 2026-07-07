@@ -86,6 +86,11 @@ UNIMPL = {(2, 0), (2, 3), (5, 6)}       # E3: model-unimplemented edges
 src = np.load(CANDS_SRC, allow_pickle=True).item()
 CANDS = {k: v.astype(np.float64) for k, v in src["cands"].items()}
 E1_F1 = {k: float(v["F1"]) for k, v in src.get("graph", {}).items()}
+# E4_ONLY: restrict to a comma list (e.g. the oracle dyn-liveness pre-check)
+if os.environ.get("E4_ONLY"):
+    _keep = set(os.environ["E4_ONLY"].split(","))
+    CANDS = {k: v for k, v in CANDS.items() if k in _keep}
+    print(f"[E4_ONLY] restricted to {sorted(CANDS)}")
 print(f"candidates: {sorted(CANDS)}  (N_REAL={N_REAL}, stage={STAGE})")
 
 # ── behavior-based matching: candidate var <-> true mode ─────────────────────
@@ -379,7 +384,33 @@ def calibrate(int_part, dyn_part):
     print(f"  diag mean {np.nanmean(diag):.3f} vs off-diag mean "
           f"{np.nanmean(off):.3f}")
 
+    # ── pool-crossed agreement PX(A) = mean_{B != A} F1(G_int(A), G_dyn(B)) ──
+    # THE pre-registered E4-v1 selector (rule fixed on the parent rung:
+    # mean over the dyn pool, candidates with < 4 behavior matches -> 0).
+    PX = {}
+    for n in names:
+        if n in Xnames:
+            a = Xnames.index(n)
+            PX[n] = float(np.mean([XM[a, b] for b in range(len(Xnames))
+                                   if b != a]))
+        else:
+            PX[n] = 0.0
+    pxv = np.array([PX[n] for n in names])
+    sp_px_pair = stats.spearmanr(pxv, fp_).statistic
+    sp_px_lag = stats.spearmanr(pxv, fl).statistic
+    pr_px_pair = stats.pearsonr(pxv, fp_).statistic
+    print(f"\n[cal] POOL-CROSSED agreement (pre-registered selector):")
+    for n in sorted(names, key=lambda x: -rows[x]["f1_pair"]):
+        print(f"  {n:<10} truthF1(pair)={rows[n]['f1_pair']:.3f}  "
+              f"PX={PX[n]:.3f}  sameW={rows[n]['agree']:.3f}")
+    print(f"  Spearman(PX, truth-F1 pair)      = {sp_px_pair:+.3f}  "
+          f"(Pearson {pr_px_pair:+.3f})  [bar >= 0.8]")
+    print(f"  Spearman(PX, truth-F1 exact-lag) = {sp_px_lag:+.3f}")
+
     out = dict(rows=rows, beh_mapping=BEH,
+               px=PX, spearman_px_pair=float(sp_px_pair),
+               spearman_px_lag=float(sp_px_lag),
+               pearson_px_pair=float(pr_px_pair),
                spearman_lag=float(sp_lag), spearman_pair=float(sp_pair),
                pearson_pair=float(pr_pair),
                cross_matrix=XM, cross_names=Xnames,

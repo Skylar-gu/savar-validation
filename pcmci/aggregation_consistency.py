@@ -32,8 +32,10 @@ from tigramite.data_processing import DataFrame
 from tigramite.independence_tests.parcorr import ParCorr
 from tigramite.pcmci import PCMCI
 
-DATA_DIR   = Path("data/realisations_hetdynamics_eqvar")
-SAE_DIR    = Path("sae_data/hetdynamics_eqvar")
+DATA_DIR   = Path(os.environ.get("AG_DATA_DIR", "data/realisations_hetdynamics_eqvar"))
+SAE_DIR    = Path(os.environ.get("AG_SAE_DIR", "sae_data/hetdynamics_eqvar"))
+SKIP_ACTS  = os.environ.get("AG_SKIP_ACTS", "0") == "1"   # (c) needs cached acts; rung gates run (a)+(b) only
+AG_OUT     = os.environ.get("AG_OUT", "results/aggregation_consistency.npy")
 N_REAL     = int(os.environ.get("AG_NREAL", 24))
 PC_ALPHA   = float(os.environ.get("AG_PCALPHA", 0.05))
 RIDGE_TAIL = int(os.environ.get("AG_RIDGE_REALS", 20))
@@ -69,17 +71,18 @@ print(f"W row-support overlap: max off-diag Jaccard = {jac[off].max():.4f}, "
       f"(rows L1-normalized; 0 = perfectly disjoint)")
 
 # ── ridge readout for (c), fit on tail realisations ───────────────────────────
-acts_full = np.load(SAE_DIR / "activations_full.npy")   # (100, 8, T_eff, 256)
-Z_full = np.load(SAE_DIR / "Z_full.npy")
-ridge = {}
-for j in range(N_MODES):
-    Xf = acts_full[-RIDGE_TAIL:, j].reshape(-1, acts_full.shape[-1])
-    yf = Z_full[-RIDGE_TAIL:, j].reshape(-1)
-    r = Ridge(alpha=10.0).fit(Xf, yf)
-    ridge[j] = r
-    pred = r.predict(Xf)
-    rr = np.corrcoef(pred, yf)[0, 1]
-    print(f"  ridge readout X{j}: in-sample |r|={abs(rr):.3f}")
+if not SKIP_ACTS:
+    acts_full = np.load(SAE_DIR / "activations_full.npy")   # (100, 8, T_eff, 256)
+    Z_full = np.load(SAE_DIR / "Z_full.npy")
+    ridge = {}
+    for j in range(N_MODES):
+        Xf = acts_full[-RIDGE_TAIL:, j].reshape(-1, acts_full.shape[-1])
+        yf = Z_full[-RIDGE_TAIL:, j].reshape(-1)
+        r = Ridge(alpha=10.0).fit(Xf, yf)
+        ridge[j] = r
+        pred = r.predict(Xf)
+        rr = np.corrcoef(pred, yf)[0, 1]
+        print(f"  ridge readout X{j}: in-sample |r|={abs(rr):.3f}")
 
 # ── 2. PCMCI+ on the three series types ───────────────────────────────────────
 def detect(graph):
@@ -94,19 +97,21 @@ def run_pcmciplus(Zs):
     return detect(res["graph"])
 
 
+_variants = ("a_trueZ", "b_pooled_pixels") + (() if SKIP_ACTS else ("c_pooled_acts",))
 agg = {v: dict(tp=0, fp=0, fn=0, agree_tp=0, agree_fp=0, agree_fn=0)
-       for v in ("a_trueZ", "b_pooled_pixels", "c_pooled_acts")}
+       for v in _variants}
 
 for ri in range(N_REAL):
     d = np.load(paths[ri])
     Z = d["latent_states"].astype(np.float64)            # (8, T)
     obs = d["observations"].astype(np.float64)           # (2500, T)
     Zb = W @ obs                                          # (8, T)
-    Zc = np.stack([ridge[j].predict(acts_full[ri, j]) for j in range(N_MODES)])
 
     det = {"a_trueZ": run_pcmciplus(Z.T),
-           "b_pooled_pixels": run_pcmciplus(Zb.T),
-           "c_pooled_acts": run_pcmciplus(Zc.T)}
+           "b_pooled_pixels": run_pcmciplus(Zb.T)}
+    if not SKIP_ACTS:
+        Zc = np.stack([ridge[j].predict(acts_full[ri, j]) for j in range(N_MODES)])
+        det["c_pooled_acts"] = run_pcmciplus(Zc.T)
     for v, dv in det.items():
         a = agg[v]
         a["tp"] += len(gt & dv); a["fp"] += len(dv - gt); a["fn"] += len(gt - dv)
@@ -125,9 +130,9 @@ for v, a in agg.items():
     print(f"{v:<18} {f1:>9.3f} {p:>6.2f} {r:>6.2f} {f1a:>10.3f}")
 
 os.makedirs("results", exist_ok=True)
-np.save("results/aggregation_consistency.npy",
+np.save(AG_OUT,
         dict(jaccard=jac, mass_overlap=mass, rows=rows, n_real=N_REAL,
-             pc_alpha=PC_ALPHA, tau_max=TAU_MAX,
+             pc_alpha=PC_ALPHA, tau_max=TAU_MAX, data_dir=str(DATA_DIR),
              note="c uses ridge readout of pooled GNN acts (K=3 window smearing included)"),
         allow_pickle=True)
-print("saved -> results/aggregation_consistency.npy")
+print(f"saved -> {AG_OUT}")
