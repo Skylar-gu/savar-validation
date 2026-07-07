@@ -41,6 +41,7 @@ K          = 3
 HIDDEN     = 256
 N_MP       = 4          # message-passing layers
 EMB_DIM    = int(os.environ.get("GNN_EMB_DIM", 0))  # per-node emb width (0=none, faithful; >0=confounded control)
+STATIC_IN  = int(os.environ.get("GNN_STATIC_INPUTS", 0))  # R2 rung: fixed sin/cos coords + hub flag as input channels (GraphCast's lat/lon/orography analogue)
 MP_MODE    = os.environ.get("GNN_MP_MODE", "gcn")   # "gcn" (fixed Â aggregation) | "graphcast" (edge MLP + node MLP)
 HUB_STRIDE = 5          # coarse-mesh spacing (→ heterogeneous hub degree)
 HUB_RADIUS = 2          # hub-lattice connection radius
@@ -170,14 +171,26 @@ class GraphCastMPLayer(nn.Module):
 
 
 class MeshGNN(nn.Module):
-    def __init__(self, ny, nx, k=K, hidden=HIDDEN, n_mp=N_MP, emb_dim=EMB_DIM, mp_mode=MP_MODE):
+    def __init__(self, ny, nx, k=K, hidden=HIDDEN, n_mp=N_MP, emb_dim=EMB_DIM, mp_mode=MP_MODE,
+                 static_in=STATIC_IN):
         super().__init__()
         self.ny, self.nx, self.L = ny, nx, ny * nx
         self.emb_dim = emb_dim
         self.mp_mode = mp_mode
+        self.static_in = static_in
         self.node_emb = nn.Embedding(self.L, emb_dim) if emb_dim > 0 else None  # confound; off by default
+        n_static = 5 if static_in else 0
+        if static_in:
+            # fixed static channels (GraphCast lat/lon/orography analogue):
+            # sin/cos(2*pi*u/nx), sin/cos(2*pi*v/ny) of node coords + hub flag
+            rr, cc = np.meshgrid(np.arange(ny), np.arange(nx), indexing="ij")
+            hub = ((rr % HUB_STRIDE == 0) & (cc % HUB_STRIDE == 0)).astype(np.float32)
+            feats = np.stack([np.sin(2 * np.pi * cc / nx), np.cos(2 * np.pi * cc / nx),
+                              np.sin(2 * np.pi * rr / ny), np.cos(2 * np.pi * rr / ny),
+                              hub], axis=-1).reshape(self.L, 5).astype(np.float32)
+            self.register_buffer("static_feats", torch.from_numpy(feats), persistent=False)
         self.encoder  = nn.Sequential(
-            nn.Linear(k + emb_dim, hidden), nn.GELU(),
+            nn.Linear(k + emb_dim + n_static, hidden), nn.GELU(),
             nn.Linear(hidden, hidden),
         )
         if mp_mode == "graphcast":
@@ -212,6 +225,8 @@ class MeshGNN(nn.Module):
             ids = torch.arange(self.L, device=x.device)
             emb = self.node_emb(ids).unsqueeze(0).expand(B, -1, -1)    # (B, L, emb)
             feats = torch.cat([feats, emb], dim=-1)
+        if self.static_in:
+            feats = torch.cat([feats, self.static_feats.unsqueeze(0).expand(B, -1, -1)], dim=-1)
         H = self.encoder(feats)                                       # (B, L, hidden)
         if self.mp_mode == "graphcast":
             for layer in self.layers:
@@ -259,10 +274,11 @@ def main():
     val_ds   = MultiRealisationDataset(os.path.join(SPLIT_DIR, "val"),   K)
     ny = train_ds.segs[0].shape[1]; nx = train_ds.segs[0].shape[2]
 
+    n_workers = int(os.environ.get("GNN_WORKERS", 4))
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                              num_workers=4, pin_memory=True, persistent_workers=True)
+                              num_workers=n_workers, pin_memory=True, persistent_workers=True)
     val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False,
-                              num_workers=4, pin_memory=True, persistent_workers=True)
+                              num_workers=n_workers, pin_memory=True, persistent_workers=True)
 
     model = MeshGNN(ny=ny, nx=nx, k=K).to(DEVICE)
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

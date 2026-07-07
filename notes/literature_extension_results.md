@@ -263,6 +263,137 @@ structural blind spots are now precisely characterized:
 
 ---
 
+## E4-v1 — agreement→accuracy calibration (2026-07-07 session)
+
+`pcmci/e4_agreement.py`, `results/litext_e4_agreement.npy`. Battery rerun with
+per-real edge SETS (`litext_e4_int_partial.npy`), behavior-based matching as
+the default convention (Hungarian on mean |corr(Ŵ-pooled pixel series, true
+Z)| over 6 reals, match iff ≥ 0.3). Dyn channel = E3 arm-B teacher-forced
+propagation THROUGH each candidate: **impulse patterns from pinv(Ŵ)** (fully
+W-free — documented choice; NOT W_plus), responses read out on Ŵ rows,
+integral statistic, pixel-permutation null α=0.01, 240 windows × 24 steps.
+Agreement = pair-level edge-set F1 between Ĝ_int (PCMCI consensus: pair in
+≥50% of 24 reals, lags marginalized) and Ĝ_dyn, in the candidate's own
+variable space (no truth anywhere).
+
+**Behavior matching validates and generalizes the shift5 lesson.** Matched
+counts: shift5 8/8 (mean |corr| 0.978 → truth-F1 0.835, the plan's number,
+now reproduced in-battery), diag8 0/8, coarse4 4/8, km_act 5/8, dmd_act 7/8
+(0.901). dmd_act's truth-F1 rises 0.177 → **0.553**: footprint-cosine
+matching had mislabeled it too, not just shift5. E1 F1s otherwise reproduce
+byte-for-byte (vmax_act 0.819, vmax_pix/km_pix/oracle 0.853, blur 0.892,
+fine16 0.013).
+
+**Same-Ŵ agreement FAILS as a calibrator — for two structural, signed
+reasons** (Spearman +0.435 exact-lag / +0.375 pair, bar ≥ 0.8):
+
+| candidate | truth-F1 (pair) | same-Ŵ agree | pool-crossed |
+|---|---|---|---|
+| blur | 0.918 | 0.556 | 0.453 |
+| oracle | 0.879 | 0.621 | 0.447 |
+| vmax_pix | 0.879 | 0.621 | 0.447 |
+| shift5 | 0.878 | **0.154** | 0.490 |
+| km_pix | 0.876 | 0.529 | 0.447 |
+| vmax_act | 0.835 | 0.298 | 0.424 |
+| split7 | 0.801 | 0.424 | 0.400 |
+| dmd_act | 0.632 | 0.118 | 0.351 |
+| merge01 | 0.622 | 0.696 | 0.391 |
+| km_act | 0.289 | 0.375 | 0.166 |
+| coarse4 | 0.230 | **0.727** | 0.149 |
+| fine16 | 0.013 | 0.000 | 0.000 |
+| diag8 | 0.000 | 0.000 | 0.000 |
+
+1. **Merges self-agree on the wrong graph** (coarse4: agreement 0.727, the
+   POOL MAXIMUM, truth 0.230). Both channels inherit the marginalization
+   jointly — the same blind spot that made merges consistency-invisible in
+   E2, now seen in two-channel form. Shared-Ŵ confound, exactly as the plan's
+   risk register predicted.
+2. **The write channel is geometry-sensitive where the read channel is not**
+   (shift5: agreement 0.154, truth 0.878, |Ĝ_dyn| = 1). Reading through Ŵ
+   only needs behaviorally coherent pooled series; *writing* through Ŵ⁺
+   needs the injection to land on the true supports. A misplaced-but-
+   coherent map reads fine and writes dead. New, GraphCast-relevant
+   asymmetry: perturbation-based validation implicitly certifies footprint
+   GEOMETRY, not just behavior.
+
+**The pre-registered cross-Ŵ cells repair it: pool-crossed agreement passes
+the bar.** PX(A) = mean over B≠A of F1(Ĝ_int(A), Ĝ_dyn(B)) (all quantities
+unsupervised; the dyn pool serves as a Ŵ-independent reference, breaking the
+shared-Ŵ error):
+
+| statistic | Spearman vs truth-F1 |
+|---|---|
+| same-Ŵ agreement (pair) | +0.375 |
+| **pool-crossed (pair)** | **+0.950** (Pearson +0.99) |
+| pool-crossed (exact-lag truth) | +0.943 |
+| transpose (dyn(A) vs int pool) | +0.288 |
+
+Cross-matrix diag 0.467 vs off-diag 0.347. The direction matters: the INT
+channel carries the map-quality signal; averaging over the pool of dyn
+references cancels per-Ŵ channel error. Behavior-good maps sit at 0.40–0.49,
+merged/weak at ≤ 0.17, dead at 0.00 — a usable unsupervised selector with a
+clean gap, where E2's consistency scores gave +0.52. Caveat, stated plainly:
+the aggregation rule (mean over the candidate pool) was fixed AFTER seeing
+the two confounds, on n=13 candidates — R6/R1 reruns are its out-of-sample
+test. G2 selection = consistency screen (E2 zeros) → pool-crossed ranking;
+G3 confidence = the pool-crossed → truth-F1 curve above.
+
+**Disagreement classification (the E3 dissociation, now through discovered
+Ŵ's).** On good maps whose dyn channel is live (oracle, vmax_pix, km_pix,
+split7, vmax_act), the true edges in Ĝ_int but NOT in Ĝ_dyn are **exactly
+{(2→0), (2→3), (5→6)}** — the three model-unimplemented couplings — 15/16
+detections (vmax_act adds (0→3)), zero non-gt disagreements. Pooled over all
+good maps incl. handicapped dyn channels (blur's smeared, shift5's shifted
+injections): 21/34 = 62% vs 25% base rate. "In the reading-graph but not the
+poking-graph" localizes emulator deficiencies through fully-discovered
+aggregation maps — the Nowack-style model-evaluation product survives losing
+the oracle W.
+
+---
+
+## R2 — static-inputs rung (partial: train + ablation)
+
+`train/gnn/gnn_forecaster.py` + `GNN_STATIC_INPUTS=1`: sin/cos(2πu/50),
+sin/cos(2πv/50), hub flag concatenated to the K frames (k → k+5 input
+channels), node_emb = 0. Trained on splits_hetdynamics_eqvar
+(checkpoints/hetdynamics_eqvar_static/); run reached epoch 6, val corr
+0.4553 vs the 40-epoch no-static baseline 0.4563 — converged to within
+0.001, kept.
+
+**Ablation check: the static channels are USED** (`eval_static_ablation.py`,
+`results/litext_r2_static_ablation.npy`): zeroing them at inference drops
+val corr 0.4553 → 0.3966 (**Δ = +0.059**, 30× the 0.002 ignore-threshold),
+while skill with them exactly matches the no-static baseline. The network
+integrated the coordinate channels into its computation WITHOUT any accuracy
+gain — position information it previously derived from mesh heterogeneity is
+now partly sourced from the input, making identity-as-content available to
+probes. Identity probe + E1(vmax_act) + E3 arm B on this checkpoint: next.
+
+---
+
+## R6 — atmosphere-regime rung (generator + ceiling done, training running)
+
+`data_gen/generate_atmoregime.py`: φ = 0.900…0.990 (τ log-spaced 9.5 → 100
+steps, spread 10.5×), same 12-edge set + lags, cross-coefficients ×0.20
+(REQUIRED for stationarity: the 0→1→2→0 cycle under near-integrator
+diagonals gives companion spectral radius 1.203 at full strength; 0.9911 at
+×0.20; critical scale 0.2135) — verified and printed by the generator.
+T=9600 + burn 900, 40 realisations (3.4 GB), DY_SCALE 0.0125 (4× cut).
+Equal stationary variance per mode via ABSOLUTE innovation scales calibrated
+empirically in two pilot iterations: per-mode Z std 1.225–1.259 vs target
+1.23 (parent eqvar amplitude — tanh-saturation regime matched). Split
+70/15/15 → data/splits_atmoregime.
+
+**Rung ceiling (own anchor): PCMCI+ on true Z, 12 reals, F1 = 0.801**
+(P 0.755, R 0.854, sign 1.000; `results/pcmci_modes_atmoregime.npy`). The
+near-unit-memory regime costs −0.05 F1 vs the parent ceiling 0.853 at
+T=9600 — autocorrelation shrinks effective sample size but nowhere near the
+<0.4 collapse gate. MeshGNN training: **val corr 0.7068 after ONE epoch**
+(vs 0.4563 converged on the parent rung) — the high-skill regime the rung
+was built for is materializing; full 15-epoch result pending.
+
+---
+
 ## Session closing — status vs the plan's bars
 
 | exp | bar | outcome |

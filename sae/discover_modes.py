@@ -46,11 +46,12 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 
 ROOT      = Path(__file__).resolve().parent.parent
-DATA_DIR  = ROOT / "data/realisations_hetdynamics_eqvar"
-SAE_DIR   = ROOT / "sae_data/hetdynamics_eqvar"
-CKPT      = ROOT / "checkpoints/hetdynamics_eqvar/best.pt"
+DATA_DIR  = Path(os.environ.get("E1_DATA_DIR", ROOT / "data/realisations_hetdynamics_eqvar"))
+SAE_DIR   = Path(os.environ.get("E1_SAE_DIR", ROOT / "sae_data/hetdynamics_eqvar"))
+CKPT      = Path(os.environ.get("E1_CKPT", ROOT / "checkpoints/hetdynamics_eqvar/best.pt"))
 RES_DIR   = ROOT / "results"
-PARTIAL   = RES_DIR / "litext_e1_discovery_partial.npy"
+E1_TAG    = os.environ.get("E1_TAG", "")           # suffix for rung reruns
+PARTIAL   = RES_DIR / f"litext_e1_discovery_partial{E1_TAG}.npy"
 
 N_REAL   = int(os.environ.get("E1_NREAL", 24))
 N_DISC   = int(os.environ.get("E1_DISC", 4))
@@ -78,6 +79,7 @@ DISC_REALS = list(range(len(paths) - N_DISC, len(paths)))   # e.g. 96..99
 assert max(range(N_REAL)) < min(DISC_REALS)
 
 # ── step 0: per-node activation scalar field on discovery reals (cached) ─────
+os.makedirs(SAE_DIR, exist_ok=True)
 SCAL_CACHE = SAE_DIR / "litext_node_scalar_acts.npy"
 PC1_CACHE  = SAE_DIR / "litext_channel_pc1.npy"
 
@@ -130,11 +132,22 @@ def extract_node_scalar():
     np.save(PC1_CACHE, np.stack([mu, v1]))
     return out
 
-if SCAL_CACHE.exists():
-    print(f"[0] using cache {SCAL_CACHE}")
-    S_ACT = np.load(SCAL_CACHE)                        # (N_DISC, L, T_EFF)
+# E1_BUILDERS: comma list of stage-1 builders to run (default: all five);
+# E1_SKIP_ACTS=1 also skips step 4 (fully-internal path). Lets a rung run its
+# pixel-side battery before the checkpoint exists, then resume with acts.
+BUILDER_SET = set(os.environ.get(
+    "E1_BUILDERS", "vmax_act,vmax_pix,km_act,km_pix,dmd_act").split(","))
+SKIP_ACTS = os.environ.get("E1_SKIP_ACTS", "0") == "1"
+NEED_ACT_FIELD = bool(BUILDER_SET & {"vmax_act", "km_act", "dmd_act"})
+
+if NEED_ACT_FIELD:
+    if SCAL_CACHE.exists():
+        print(f"[0] using cache {SCAL_CACHE}")
+        S_ACT = np.load(SCAL_CACHE)                    # (N_DISC, L, T_EFF)
+    else:
+        S_ACT = extract_node_scalar()
 else:
-    S_ACT = extract_node_scalar()
+    S_ACT = None
 
 S_PIX = np.stack([np.load(paths[ri])["observations"].astype(np.float32)
                   for ri in DISC_REALS])               # (N_DISC, L, T)
@@ -265,6 +278,7 @@ BUILDERS = [("vmax_act", cand_varimax, S_ACT),
             ("km_act",   cand_kmeans,  S_ACT),
             ("km_pix",   cand_kmeans,  S_PIX[..., :T_EFF]),
             ("dmd_act",  cand_dmd,     S_ACT)]
+BUILDERS = [(n, f, fld) for n, f, fld in BUILDERS if n in BUILDER_SET]
 import time
 for name, fn, field in BUILDERS:
     t0_ = time.time()
@@ -303,7 +317,7 @@ for name, fm in FOOT.items():
           f"{fm['mean_cos']:>6.3f} {fm['mean_iou']:>6.3f}")
 
 if STAGE == "footprints":
-    np.save(RES_DIR / "litext_e1_footprints.npy",
+    np.save(RES_DIR / f"litext_e1_footprints{E1_TAG}.npy",
             dict(cands={k: v for k, v in CANDS.items()}, foot=FOOT),
             allow_pickle=True)
     print("footprints-only stage done"); sys.exit(0)
@@ -373,6 +387,20 @@ for name, What in CANDS.items():
     np.save(PARTIAL, partial, allow_pickle=True)
 
 # ── step 4: fully-internal path for best internal candidate + oracle ─────────
+if SKIP_ACTS:
+    np.save(RES_DIR / f"litext_e1_discovery{E1_TAG}.npy",
+            dict(cands={k: v for k, v in CANDS.items()},
+                 foot={k: {kk: vv for kk, vv in v.items() if kk != "cos_matrix"}
+                       for k, v in FOOT.items()},
+                 graph=GRAPH, acts_rows={}, best_internal=None,
+                 n_real=N_REAL, disc_reals=DISC_REALS, pc_alpha=PC_ALPHA,
+                 tau_max=TAU_MAX, coh_min=COH_MIN, c0=C0,
+                 note="E1 pixel-side only (E1_SKIP_ACTS=1)"),
+            allow_pickle=True)
+    print(f"\n[4] skipped (E1_SKIP_ACTS=1); saved -> "
+          f"results/litext_e1_discovery{E1_TAG}.npy")
+    sys.exit(0)
+
 print("\n[4] fully-internal path (pool ACTIVATIONS through W-hat, PC1 readout)")
 internal = {k: GRAPH[k]["F1"] for k in ("vmax_act", "km_act", "dmd_act")
             if k in GRAPH and CANDS[k].shape[0] > 0}
@@ -432,7 +460,7 @@ for name in ([best_int] if best_int else []) + ["oracle"]:
         np.save(PARTIAL, partial, allow_pickle=True)
 
 os.makedirs(RES_DIR, exist_ok=True)
-np.save(RES_DIR / "litext_e1_discovery.npy",
+np.save(RES_DIR / f"litext_e1_discovery{E1_TAG}.npy",
         dict(cands={k: v for k, v in CANDS.items()},
              foot={k: {kk: vv for kk, vv in v.items() if kk != "cos_matrix"}
                    for k, v in FOOT.items()},
@@ -444,4 +472,4 @@ np.save(RES_DIR / "litext_e1_discovery.npy",
              note="E1 litext: unsupervised mode discovery -> pixel/activation "
                   "pooling -> PCMCI+; Hungarian-strict edge mapping"),
         allow_pickle=True)
-print("\nsaved -> results/litext_e1_discovery.npy")
+print(f"\nsaved -> results/litext_e1_discovery{E1_TAG}.npy")

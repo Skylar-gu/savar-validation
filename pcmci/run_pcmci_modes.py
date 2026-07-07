@@ -36,6 +36,7 @@ from tigramite.pcmci import PCMCI
 DATA_DIRS = os.environ.get("PCM_DATA_DIRS", "data/realisations_finecadence").split(",")
 N_REAL    = int(os.environ.get("PCM_NREAL", 40))
 PC_ALPHA  = float(os.environ.get("PCM_PCALPHA", 0.05))
+OUT       = os.environ.get("PCM_OUT", "results/pcmci_modes.npy")
 
 
 def prf(tp, fp, fn):
@@ -113,5 +114,5 @@ for dd in DATA_DIRS:
           f"(tau_max={r['tau_max']}, n={r['n_real']})")
 
 os.makedirs("results", exist_ok=True)
-np.save("results/pcmci_modes.npy", rows)
-print("\nsaved -> results/pcmci_modes.npy")
+np.save(OUT, rows)
+print(f"\nsaved -> {OUT}")

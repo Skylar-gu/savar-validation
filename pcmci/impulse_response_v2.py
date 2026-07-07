@@ -46,7 +46,8 @@ DOSE_HI = 3.0
 N_PERM  = int(os.environ.get("E3_NPERM", 1000))
 ALPHA   = float(os.environ.get("E3_ALPHA", 0.01))
 OUT     = os.environ.get("E3_OUT", "results/litext_e3_dynarm.npy")
-PHI     = np.array([0.15, 0.30, 0.42, 0.55, 0.68, 0.78, 0.86, 0.92])
+PHI     = np.array([float(x) for x in os.environ.get(
+    "E3_PHI", "0.15,0.30,0.42,0.55,0.68,0.78,0.86,0.92").split(",")])
 DEVICE  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BS      = 48
 
