@@ -411,6 +411,21 @@ equally-skilled emulators differ ~2× in how much of the physical coupling
 structure they implement; the Nowack-style response-graph product measures
 exactly that.
 
+**Fully-internal path (acts pooled through Ŵ, PC1 readout):** acts:oracle
+0.813 → **0.876** on the static checkpoint (the per-mode address offsets
+sharpen the unsupervised PC1 readout — above even the parent's 0.855 ridge
+anchor); acts:vmax_act 0.641 → **0.482** (the sharper-cosine discovered
+footprints are *worse as pooling maps*, compounding with the readout).
+
+**R2 verdict.** Static coordinate inputs create identity-as-content in
+exactly one sense: a perfect, linearly-readable, offset-based ADDRESS code
+(probe 1.000) that improves oracle-pooled readout (0.876) — while the shape
+code stays at chance, discovered-Ŵ graph recovery degrades (0.819→0.651
+pixel; 0.641→0.482 internal), and the implemented dynamics THIN OUT (E3
+recall 9/12→5/12 at equal skill). Identity-as-content ≠ better causal
+substrate; it substitutes for implemented coupling rather than augmenting
+it.
+
 ---
 
 ## R6 — atmosphere-regime rung (generator + ceiling done, training running)

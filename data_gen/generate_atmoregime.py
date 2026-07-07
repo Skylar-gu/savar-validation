@@ -63,6 +63,27 @@ PHI_PARENT = [0.15, 0.30, 0.42, 0.55, 0.68, 0.78, 0.86, 0.92]
 def _dc(eff):
     return CROSS_SCALE * (1.0 - PHI[eff]) / (1.0 - PHI_PARENT[eff])
 
+# v3 (2026-07-07): SNR-EQUALIZED cross coefficients. v2's DC-matched values
+# (0.009-0.018 per step) sit below the ParCorr detection floor once own-lag
+# conditioning strips the integration — PCMCI-on-true-Z ceiling collapsed to
+# F1 0.160 (plan gate). The quantity PCMCI actually tests is the innovation-
+# scale partial r = |c| * 0.83 * std_cause / sigma_innov_effect. v3 solves
+# (discrete Lyapunov, self-consistent) for coefficients giving every
+# effect's WEAKEST incoming edge r = 0.08 (~8 sigma per realisation at
+# T=9600), preserving within-effect ratios and signs. Result: radius 0.990,
+# per-edge r 0.08-0.15, mode-std spread 1.87 with X7 at its structural floor
+# (own-innovation share 25%) — eqvar is RELAXED on this rung: the spread is
+# the physical price of near-unit memory with detectable couplings. DC gains
+# land at parent scale (6->7: 1.65 vs parent 2.5).
+_ATMO_COEFFS = {
+    (2, 0):  0.0385, (0, 1):  0.0338, (1, 2):  0.0289,
+    (0, 3):  0.0246, (2, 3): -0.0246, (1, 4):  0.0209,
+    (4, 5):  0.0310, (0, 5): -0.0177, (3, 6):  0.0146,
+    (5, 6):  0.0122, (6, 7):  0.0165, (3, 7): -0.0124,
+}
+def _c(cause, eff):
+    return _ATMO_COEFFS[(cause, eff)] * CROSS_SCALE
+
 # ABSOLUTE per-mode innovation scales (parent renormalises to mean 1; here the
 # scales set the amplitude directly so eqvar calibration can target the parent
 # rung's mode std ~1.23 and keep the tanh regime matched).
@@ -72,16 +93,16 @@ if os.environ.get("HD_INNOV_SCALE"):
 else:
     INNOV_SCALE = np.ones(8)
 
-# ── ground-truth graph: SAME edge set + lags as hetdynamics, DC-matched coeffs ──
+# ── ground-truth graph: SAME edge set + lags as hetdynamics, SNR-eq coeffs ──
 links_coeffs = {
-    0: [((0, -1),  PHI[0]), ((2, -3),  0.22*_dc(0))],
-    1: [((1, -1),  PHI[1]), ((0, -1),  0.35*_dc(1))],
-    2: [((2, -1),  PHI[2]), ((1, -1),  0.40*_dc(2))],
-    3: [((3, -1),  PHI[3]), ((0, -1),  0.30*_dc(3)), ((2, -2), -0.30*_dc(3))],
-    4: [((4, -1),  PHI[4]), ((1, -3),  0.25*_dc(4))],
-    5: [((5, -1),  PHI[5]), ((4, -2),  0.35*_dc(5)), ((0, -4), -0.20*_dc(5))],
-    6: [((6, -1),  PHI[6]), ((3, -2),  0.30*_dc(6)), ((5, -6),  0.25*_dc(6))],
-    7: [((7, -1),  PHI[7]), ((6, -4),  0.20*_dc(7)), ((3, -6), -0.15*_dc(7))],
+    0: [((0, -1),  PHI[0]), ((2, -3),  _c(2, 0))],
+    1: [((1, -1),  PHI[1]), ((0, -1),  _c(0, 1))],
+    2: [((2, -1),  PHI[2]), ((1, -1),  _c(1, 2))],
+    3: [((3, -1),  PHI[3]), ((0, -1),  _c(0, 3)), ((2, -2), _c(2, 3))],
+    4: [((4, -1),  PHI[4]), ((1, -3),  _c(1, 4))],
+    5: [((5, -1),  PHI[5]), ((4, -2),  _c(4, 5)), ((0, -4), _c(0, 5))],
+    6: [((6, -1),  PHI[6]), ((3, -2),  _c(3, 6)), ((5, -6), _c(5, 6))],
+    7: [((7, -1),  PHI[7]), ((6, -4),  _c(6, 7)), ((3, -6), _c(3, 7))],
 }
 
 check_stability(links_coeffs)
