@@ -186,4 +186,37 @@ unsupervised end to end, no Z and no pixels in the series):
 
 ## E2 — Adag consistency scores as unsupervised selector
 
-*(pending E1 battery)*
+**v1 — pure level-consistency: FAILS as a selector, in two instructive ways**
+(`pcmci/aggregation_selection.py`, `results/litext_e2_adag.npy`; scores per
+candidate = agreement between aggregate-level and pixel-level (in)dependence
+verdicts + a sufficiency test; 6 reals, α=0.01):
+
+| score | Spearman vs truth-F1 (13 candidates) |
+|---|---|
+| S_dep | −0.277 |
+| S_indep | +0.572 |
+| S_suff | −0.180 |
+| S_joint | **+0.174** |
+
+1. **Consistency is gameable by signal destruction.** diag8 (truth-F1 0.000)
+   scored S_joint 0.973: a map that pools noise has *no dependencies at either
+   level* and is vacuously consistent. fine16 (duplicate halves, F1 0.013)
+   scored 0.977 — its faithfulness pathology is invisible to level-agreement.
+   Consistency is necessary, not sufficient; selection needs an
+   informativeness term and a non-redundancy term.
+2. **Over-conditioning bug with a lesson.** v1's "pragmatic FullCI" included
+   the tested pair's own lags in the conditioning set — which conditions away
+   the lagged dependence under test (the oracle showed n_dep = 0: its 12 true
+   edges all erased). Residual dependence under that protocol measures
+   aggregate *impurity*, inverting the intended ranking. General lesson for
+   any consistency-score implementation: the aggregate-level and micro-level
+   tests must target the dependence the *discovery* stage will use, with the
+   candidate cause's past left out of the conditioning set.
+
+**v2 — composite selector** (`pcmci/aggregation_selection_v2.py`): partial
+aggregation (random half-splits) as micro-variables for power; four components
+— S_info (dependency density; vacuous maps → 0), S_dup (near-deterministic
+pair penalty; catches fine16), S_agree (micro–macro agreement counted only on
+pairs with signal — no vacuous credit), S_suff (halves residualized on own
+aggregate must be independent of other aggregates); S_total = √S_info · S_dup
+· S_agree · S_suff. *(running)*
