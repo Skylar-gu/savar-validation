@@ -16,13 +16,14 @@ candidates) and was pacing at ~1.4 h *per candidate* on 4 cores (~8–12 h
 total). The GPU (L40S) sits idle during it.
 
 **Recommended box: 16–32 vCPUs + any modern CUDA GPU** (L40S-class is already
-more than enough; the GPU stages are minutes-to-~1 h). Expected battery time
-on 32 cores: **~1–1.5 h**. The same trade holds for every future rung (R3/R4/
-R5 each rerun a battery), so this pays off repeatedly.
+more than enough; the GPU stages are minutes-to-~1 h). The next cluster is
+**16 vCPUs**: with 14 workers the remaining battery is ~**2.5–3.5 h** (vs
+~7–11 h here). The same trade holds for every future rung (R3/R4/R5 each
+rerun a battery), so this pays off repeatedly.
 
 Two code knobs to bump on the bigger box (both currently hard-coded to 4):
 - `sae/discover_modes.py` — `ProcessPoolExecutor(max_workers=4, ...)` in
-  `score_candidate` (~line 361): set to ~`cores-2`.
+  `score_candidate` (~line 361): set to 14 on a 16-vCPU box (~`cores-2`).
 - `pcmci/e4_agreement.py` — same pattern in its int/dyn stages (grep
   `max_workers`).
 Keep the existing convention: `OMP_NUM_THREADS=1` **only inside the worker
@@ -157,13 +158,13 @@ are (2500, T) but splits obs are (T, 50, 50).
 
 ### Left (R1, resume in §4 order)
 
-| step | estimate (4 cores / 32 cores) |
+| step | estimate (4 cores / 16 cores, 14 workers) |
 |---|---|
-| E1 battery, remaining 12/13 candidates | ~7–11 h / **~1–1.5 h** |
+| E1 battery, remaining 12/13 candidates | ~7–11 h / **~2.5–3.5 h** |
 | E4 int channel | ~free (edge sets saved by E1) |
 | E4 dyn channel (GPU) + liveness | ~1–2 h (GPU-bound, same either way) |
 | **PX Spearman — headline out-of-sample number** | minutes once E4 lands |
-| E2 consistency screen | ~1–2 h / ~20 min (overlaps with E4 dyn) |
+| E2 consistency screen | ~1–2 h / ~30 min (overlaps with E4 dyn) |
 | write-up + commits + memory | ~15 min |
 
 ### Left (after R1)
