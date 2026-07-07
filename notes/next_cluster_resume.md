@@ -30,22 +30,61 @@ Keep the existing convention: `OMP_NUM_THREADS=1` **only inside the worker
 initializer**, never globally (global setting cripples single-process BLAS —
 learned the hard way).
 
-## 2. What to copy to the new cluster
+## 2. Getting the artifacts onto the new cluster
 
-The repo (branch `agent/session-2026-07-03`) carries code, notes, and
-`results/*.npy` (tracked, includes the partial caches). These directories are
-**gitignored** and must be rsynced or regenerated:
+**UPDATE 2026-07-08: the small irreplaceable artifacts now travel IN GIT** —
+`checkpoints/overlap02/{best.pt,history.npy}` (3.4 MB) and
+`sae_data/overlap02/{litext_node_scalar_acts.npy,litext_channel_pc1.npy}`
+(91.4 MB) are force-added on this branch (one-off exception to the gitignore;
+the acts file sits under GitHub's 100 MB limit). A plain clone + checkout of
+`agent/session-2026-07-03` delivers them. **Do not retrain the checkpoint** —
+retraining changes the model under test (val RMSE 1.2955, corr 0.495).
 
-| artifact | size | copy or regenerate |
-|---|---|---|
-| `data/realisations_overlap02/` | 2.1 G | copy, or regen: `python3 data_gen/generate_overlap.py` (deterministic, seeds fixed; verify corr(Z_ov, Z_parent) ≥ 0.999 on real 0) |
-| `data/splits_overlap02/` | 2.2 G | copy, or regen with the standard 70/15/15 splitter |
-| `checkpoints/overlap02/best.pt` | 3.5 M | **copy — do not retrain** (val RMSE 1.2955, corr 0.495; retraining changes the model under test) |
-| `sae_data/overlap02/` | 92 M | copy (acts cache `litext_node_scalar_acts.npy` + `litext_channel_pc1.npy`); regenerable from checkpoint in ~5 min GPU if lost |
-| parent-rung artifacts (`data/realisations_hetdynamics_eqvar`, its splits, `checkpoints/hetdynamics_eqvar`) | ~4 G | only needed for E4-final cross-rung calibration and any parent reruns; copy if cheap |
+The big data dirs are regenerated on the new box (CPU-only, deterministic):
 
-Environment: system python3 with **torch (CUDA) + tigramite + scikit-learn +
-pydmd + scipy**. No venv needed (current box ran on torch 2.6 cu124, py3.9).
+```bash
+# 1. realisations (~2.1 G; numpy pinned — see below)
+python3 data_gen/generate_overlap.py            # -> data/realisations_overlap02
+
+# 2. verify array contents byte-for-byte against this box's manifest
+python3 data_gen/manifests/verify_content_hashes.py \
+        data_gen/manifests/overlap02_realisations.sha256   # expect "100 ok"
+
+# 3. splits (70/15/15 along time; data_split.py is now env-parameterized)
+SPLIT_REAL_DIR=data/realisations_overlap02 \
+SPLIT_OUT_DIR=data/splits_overlap02 python3 data_gen/data_split.py
+```
+
+Determinism note: the manifest was built with **numpy 2.0.2 / scipy 1.13.1**
+(py3.9). `default_rng` bit-streams are stable across platforms for a given
+numpy major version — if the verify step reports mismatches, match the numpy
+version rather than trusting eyeballed stats. The manifest hashes array
+CONTENTS, not npz file bytes (zip metadata isn't reproducible).
+
+Parent-rung artifacts (`realisations_hetdynamics_eqvar` + splits +
+`checkpoints/hetdynamics_eqvar` + its acts cache, ~5.5 G) are only needed for
+E4-final cross-rung calibration — same recipe applies (parent generator is
+`data_gen/generate_hetdynamics.py`; checkpoint would need rsync or a
+force-add if that box is ever GPU-less too).
+
+Environment: system python3 with **tigramite + scikit-learn + pydmd + scipy**
+(CPU work); torch+CUDA only for training/acts/E4-dyn.
+
+### 2b. If the new box has no working GPU (2026-07-08 reality)
+
+The first 32-vCPU box came up with a broken driver path (custom 6.18 kernel,
+no kernel-devel). That blocks ONLY: acts regeneration (cache ships in git —
+moot) and the **E4 dyn stage**. Division of labor that loses nothing:
+
+- **new box (CPU):** E1 battery (max_workers≈30; ~24 useful — one per
+  realisation) → commit+push `results/litext_e1_discovery_overlap02.npy` +
+  the completed `litext_e4_int_partial_overlap02.npy`; then E2 screen.
+  E1's step 0 finds the shipped acts cache and never touches the GPU; its
+  step 4 (fully-internal readout, 2 candidates) falls back to CPU torch
+  automatically — slower but fine.
+- **GPU box (the old L40S, or any CUDA box with this branch + the git-shipped
+  checkpoint):** pull, then E4 with `E4_STAGE=dyn` and finally `E4_STAGE=cal`
+  (int stage reads the pushed partial). The PX headline comes out of cal.
 
 ## 3. Exactly what was running and where it stopped
 
