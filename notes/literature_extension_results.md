@@ -213,10 +213,65 @@ verdicts + a sufficiency test; 6 reals, α=0.01):
    tests must target the dependence the *discovery* stage will use, with the
    candidate cause's past left out of the conditioning set.
 
-**v2 — composite selector** (`pcmci/aggregation_selection_v2.py`): partial
-aggregation (random half-splits) as micro-variables for power; four components
-— S_info (dependency density; vacuous maps → 0), S_dup (near-deterministic
-pair penalty; catches fine16), S_agree (micro–macro agreement counted only on
-pairs with signal — no vacuous credit), S_suff (halves residualized on own
-aggregate must be independent of other aggregates); S_total = √S_info · S_dup
-· S_agree · S_suff. *(running)*
+**v2 — composite selector** (`pcmci/aggregation_selection_v2.py`,
+`results/litext_e2_adag_v2.npy`): partial aggregation (random half-splits) as
+micro-variables for power; four components — S_info (dependency density;
+vacuous maps → 0), S_dup (near-deterministic pair penalty), S_agree
+(micro–macro agreement counted only on pairs with signal), S_suff (halves
+residualized on own aggregate independent of other aggregates); pre-registered
+S_total = √S_info · S_dup · S_agree · S_suff.
+
+**The shift5 rescore — the truth axis itself was wrong for misplaced maps.**
+v2 gave shift5 (footprint-matched "F1 = 0.000") a near-oracle score of 0.619.
+Investigating: shift5's pooled series correlate 0.979 with the true modes —
+its footprints are geometrically wrong but behaviorally coherent, and under
+**behavior-based matching** (variable ↔ mode by series correlation, not
+footprint cosine) its graph scores **F1 = 0.835**. The consistency scores were
+right; the footprint-cosine Hungarian convention was mislabeling a good map.
+diag8 stays 0.000 under both matchings (S_info = 0 agreed). Methodological
+consequence for GraphCast: *footprint geometry is the wrong success criterion;
+behavioral coherence of the pooled series is the right one*, and all
+calibration must use label-free scoring.
+
+**Verdict against corrected truth-F1** (shift5 → 0.835):
+
+| score | Spearman (13 candidates) |
+|---|---|
+| S_total (pre-registered) | **+0.522** |
+| S_agree | +0.554 |
+| S_info | +0.483 |
+| S_dup | +0.354 |
+| S_suff | +0.008 |
+| exploratory no-suff composites | +0.49 |
+
+**Bar (≥0.8) NOT met — the pre-registered fallback branch activates.** The
+structural blind spots are now precisely characterized:
+1. **Merges are consistency-invisible**: coarse4 passes info/agree/dup (its
+   aggregates carry real dependencies); only the purity test (S_suff) catches
+   it — but purity also executes blur (F1 0.892) and vmax_act (0.819), whose
+   *impurity is harmless or helpful*. Purity ≠ usability is the same lesson
+   E1's blur result taught, now seen from the selection side.
+2. **The scores' zeros are trustworthy** (S_info = 0 or S_agree ≈ 0 ⇒ map is
+   genuinely dead: diag8, and v1's vacuous cases once informativeness is
+   demanded) — consistency works as a *screen*, not a *ranker*.
+3. With 13 candidates, further composite iteration is overfitting; per the
+   plan (§6 risk register), **selection now falls to E4 cross-channel
+   agreement** (activations-graph vs response-graph on the same Ŵ), with the
+   consistency screen retained as a cheap first filter. E3's dissociation
+   result (channels disagree exactly where the model is wrong) makes this
+   fallback more credible than it was at planning time.
+
+---
+
+## Session closing — status vs the plan's bars
+
+| exp | bar | outcome |
+|---|---|---|
+| E1 discovery bake-off | best candidate within 0.05 of oracle-W | **PASS**: vmax_pix 0.853 = oracle exactly (R=1.00); internals-only vmax_act 0.819 (−0.036); shift5 0.835 under behavior-matching. Discovery price ≈ 0.02–0.04 F1 |
+| E2 consistency selection | Spearman ≥ 0.8 | **FAIL, cleanly factored**: pre-registered composite +0.52 after truth-axis correction; zeros trustworthy (screen), ranking not; merges consistency-invisible vs purity-kills-good-maps tension; fallback → E4 agreement (pre-registered branch) |
+| E3 dynamical arm | direct F1 ≥ 0.75 | **method at ceiling, model is the limit**: 9/9 recall on the edges the model implements; deconv variant P=1.000 (zero FP); 3 misses = genuine transfer-function zeros of the frozen GNN (one is the true system's 2nd-strongest edge) — an emulator deficiency the arm *discovered*; τ-Spearman 0.74→0.95 via teacher-forcing |
+
+**Next steps (in plan order):** E4 agreement↔accuracy calibration — rerun the
+E1 battery saving per-candidate edge SETS (not just counts) so agreement cells
+can be computed against E3's saved detections; add behavior-based matching as
+the default scoring convention. Then R2/R6 rungs (cheap trains) and R1.
