@@ -281,6 +281,12 @@ def main():
                               num_workers=n_workers, pin_memory=True, persistent_workers=True)
 
     model = MeshGNN(ny=ny, nx=nx, k=K).to(DEVICE)
+    init_from = os.environ.get("GNN_INIT_FROM", "")
+    if init_from and os.path.exists(init_from):
+        ck = torch.load(init_from, map_location=DEVICE, weights_only=False)
+        model.load_state_dict(ck["model_state"])
+        print(f"  warm-start from {init_from} (epoch {ck.get('epoch')}, "
+              f"val_rmse {ck.get('val_rmse'):.4f})")
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"\nModel: MeshGNN (heterogeneous multi-scale mesh)")
     print(f"  Device     : {DEVICE}")

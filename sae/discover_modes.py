@@ -291,6 +291,11 @@ for name, What in build_corrupted().items():
     CANDS[name] = What
     print(f"  {name}: C={What.shape[0]}")
 CANDS["oracle"] = W_TRUE / W_TRUE.sum(1, keepdims=True)
+# E1_ONLY: restrict the battery to a comma list of candidates (targeted reruns)
+if os.environ.get("E1_ONLY"):
+    _keep = set(os.environ["E1_ONLY"].split(","))
+    CANDS = {k: v for k, v in CANDS.items() if k in _keep}
+    print(f"  [E1_ONLY] restricted to {sorted(CANDS)}")
 
 # ── step 2: footprint metrics ─────────────────────────────────────────────────
 def footprint_metrics(What):

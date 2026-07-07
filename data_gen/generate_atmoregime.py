@@ -49,7 +49,19 @@ _PHI_DEFAULT = ",".join(f"{np.exp(-1.0/t):.6f}" for t in _TAU)
 PHI = [float(x) for x in os.environ.get("HD_PHI", _PHI_DEFAULT).split(",")]
 assert len(PHI) == 8
 
-CROSS_SCALE = float(os.environ.get("ATMO_CROSS_SCALE", 0.20))
+# v2: DC-GAIN-MATCHED cross coefficients. A global scale is the wrong knob in
+# the near-integrator regime: each edge's integrated (quasi-static) gain is
+# c/(1-phi_effect), so with phi -> 0.99 even c=0.05 gives DC gain 5-20 and
+# chained modes random-walk (v2 pilot: X7 std 8, ACF 0.9996). Instead match
+# each edge's DC gain to the PARENT rung's: c_new = c_parent *
+# (1-phi_new[eff])/(1-phi_parent[eff]). Keeps integrated teleconnection
+# strength, sign, lag and the cycle's DC loop gain (stability) at parent
+# levels — the "weak instantaneous, strong integrated coupling" structure of
+# real slow climate modes. ATMO_CROSS_SCALE remains as an extra multiplier.
+CROSS_SCALE = float(os.environ.get("ATMO_CROSS_SCALE", 1.0))
+PHI_PARENT = [0.15, 0.30, 0.42, 0.55, 0.68, 0.78, 0.86, 0.92]
+def _dc(eff):
+    return CROSS_SCALE * (1.0 - PHI[eff]) / (1.0 - PHI_PARENT[eff])
 
 # ABSOLUTE per-mode innovation scales (parent renormalises to mean 1; here the
 # scales set the amplitude directly so eqvar calibration can target the parent
@@ -60,17 +72,16 @@ if os.environ.get("HD_INNOV_SCALE"):
 else:
     INNOV_SCALE = np.ones(8)
 
-# ── ground-truth graph: SAME edge set + lags as hetdynamics, coeffs x scale ──
-cs = CROSS_SCALE
+# ── ground-truth graph: SAME edge set + lags as hetdynamics, DC-matched coeffs ──
 links_coeffs = {
-    0: [((0, -1),  PHI[0]), ((2, -3),  0.22*cs)],
-    1: [((1, -1),  PHI[1]), ((0, -1),  0.35*cs)],
-    2: [((2, -1),  PHI[2]), ((1, -1),  0.40*cs)],
-    3: [((3, -1),  PHI[3]), ((0, -1),  0.30*cs), ((2, -2), -0.30*cs)],
-    4: [((4, -1),  PHI[4]), ((1, -3),  0.25*cs)],
-    5: [((5, -1),  PHI[5]), ((4, -2),  0.35*cs), ((0, -4), -0.20*cs)],
-    6: [((6, -1),  PHI[6]), ((3, -2),  0.30*cs), ((5, -6),  0.25*cs)],
-    7: [((7, -1),  PHI[7]), ((6, -4),  0.20*cs), ((3, -6), -0.15*cs)],
+    0: [((0, -1),  PHI[0]), ((2, -3),  0.22*_dc(0))],
+    1: [((1, -1),  PHI[1]), ((0, -1),  0.35*_dc(1))],
+    2: [((2, -1),  PHI[2]), ((1, -1),  0.40*_dc(2))],
+    3: [((3, -1),  PHI[3]), ((0, -1),  0.30*_dc(3)), ((2, -2), -0.30*_dc(3))],
+    4: [((4, -1),  PHI[4]), ((1, -3),  0.25*_dc(4))],
+    5: [((5, -1),  PHI[5]), ((4, -2),  0.35*_dc(5)), ((0, -4), -0.20*_dc(5))],
+    6: [((6, -1),  PHI[6]), ((3, -2),  0.30*_dc(6)), ((5, -6),  0.25*_dc(6))],
+    7: [((7, -1),  PHI[7]), ((6, -4),  0.20*_dc(7)), ((3, -6), -0.15*_dc(7))],
 }
 
 check_stability(links_coeffs)
@@ -121,6 +132,23 @@ def _g_sat(m):
     return (1.0 - NL_ALPHA) * m + NL_ALPHA * np.tanh(m)
 
 
+# v2 (2026-07-07): SELF-LOOPS LINEAR, cross-terms saturated. v1 applied the
+# parent's _g_sat to the full lagged state INCLUDING the phi self-loop; at
+# operating amplitude ~1.23 the saturation derivative (0.5 + 0.5*sech^2(1.2)
+# ~ 0.66) caps the SMALL-SIGNAL memory at tau_eff = -1/ln(0.66*phi) ~ 3 steps
+# for EVERY phi — realized ACF(1) was 0.69-0.77 (spread 1.36x) instead of the
+# designed 0.90-0.99 (10.5x): the rung's defining regime was destroyed (the
+# same mechanism compresses the parent rung's phi=0.92 to tau_eff~3.3).
+# Diagonal linear => realized memory = phi exactly; the nonlinearity the
+# ladder cares about (saturating CROSS-mode transfer + bilinear advection)
+# is preserved.
+G_DIAG = np.zeros_like(G)
+G_CROSS = G.copy()
+for _j in range(N):
+    G_DIAG[_j, _j, 0] = G[_j, _j, 0]
+    G_CROSS[_j, _j, 0] = 0.0
+
+
 def _bilinear(data, t):
     if NL_BETA == 0.0 or not cross_edges:
         return np.zeros(N)
@@ -157,7 +185,8 @@ def generate_obs(noise_field):
         contrib = np.zeros(N)
         for lag in range(1, tau_max + 1):
             m_lag = W_flat @ data[:, t - lag]
-            contrib += G[:, :, lag - 1] @ _g_sat(m_lag)
+            contrib += G_DIAG[:, :, lag - 1] @ m_lag            # linear memory
+            contrib += G_CROSS[:, :, lag - 1] @ _g_sat(m_lag)   # saturated transfer
         contrib += _bilinear(data, t)
         data[:, t] += W_plus @ contrib
     return data[:, burn:]
@@ -214,3 +243,12 @@ print(f"\nDone in {time.time()-t_start:.1f}s")
 print(f"  Global max |Z|: {max_abs_global:.3f}")
 print(f"  Per-mode Z std (mean over reals): {np.stack(all_stds).mean(0).round(3)}")
 print(f"  (target ~1.23 across all modes = parent eqvar amplitude)")
+
+# realized-memory verification gate (the v1 failure mode): ACF(1) must track phi
+d_last = np.load(os.path.join(OUT_DIR, f"realisation_{N_REALISATIONS-1:03d}.npz"))
+Zv = d_last["latent_states"].astype(np.float64)
+ac1 = np.array([np.corrcoef(Zv[j, :-1], Zv[j, 1:])[0, 1] for j in range(N)])
+print(f"  Realized ACF(1) per mode: {ac1.round(4)}")
+print(f"  Designed phi:             {np.array(PHI).round(4)}")
+print(f"  max |ACF(1) - phi| = {np.abs(ac1 - np.array(PHI)).max():.4f} "
+      f"({'OK' if np.abs(ac1 - np.array(PHI)).max() < 0.05 else 'REGIME MISMATCH'})")

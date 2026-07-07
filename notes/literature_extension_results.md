@@ -367,7 +367,49 @@ while skill with them exactly matches the no-static baseline. The network
 integrated the coordinate channels into its computation WITHOUT any accuracy
 gain — position information it previously derived from mesh heterogeneity is
 now partly sourced from the input, making identity-as-content available to
-probes. Identity probe + E1(vmax_act) + E3 arm B on this checkpoint: next.
+probes.
+
+**Identity probe: a perfect ADDRESS code appears; the shape code does not
+move** (`sae_data/hetdynamics_eqvar_static/probe_mode_identity.npy` vs the
+baseline checkpoint's probe):
+
+| probe | baseline ckpt | static ckpt |
+|---|---|---|
+| linear/raw | 0.700 | **1.000** (all 8 modes 1.00) |
+| linear/demeaned | 0.163 | **0.175** |
+| mlp/raw | 0.710 | **1.000** |
+| (chance) | 0.125 | 0.125 |
+
+Static inputs create the first genuine what-code of the whole program — and
+it is *exactly* a lookup: remove each mode's constant offset and identity
+decodability collapses back to near-chance (0.175). No identity-specific
+*computation* (shape code) emerges. GraphCast translation: lat/lon/orography
+inputs guarantee position decodability from activations, but that
+decodability is offset-based; do not read it as evidence of mode-specific
+dynamics processing.
+
+**E1 discovery on the static checkpoint: footprints sharpen, the graph does
+NOT improve** (`results/litext_e1_discovery_r2static.npy`, footprint-matched
+E1 protocol): vmax_act footprint cosine 0.701 → **0.882** (N̂ still 12), but
+pixel-pooled graph F1 0.819 → **0.651** (R 0.81 → 0.57); oracle battery
+reproduces 0.853 exactly (protocol control). Discovery geometry benefits
+from the coordinate channels; the sharper components do not preserve the
+independence model any better — footprint cosine is not the target (E1
+lesson, re-confirmed from the opposite direction).
+
+**E3 arm B on the static checkpoint: implemented-coupling recall HALVES at
+identical forecast skill** (`results/litext_e3_dynarm_r2static.npy`;
+B+integral): direct recall 9/12 → **5/12** (F1 0.476 vs 0.621), missing the
+baseline's 3 unimplemented edges PLUS (0→5), (1→4), (3→7), (6→7) — all four
+newly-lost edges are the slow/long-lag couplings (ℓ = 3, 4, 6). Ancestor
+precision stays 1.000 (the arm still never hallucinates), τ-Spearman 0.905,
+deconv P = 1.000 (zero FP). Reading: with an address channel available, the
+network satisfies the same loss while implementing LESS long-range
+cross-mode transfer in its forward map — an architecture/input change
+invisible to val corr is fully visible to the response channel. Two
+equally-skilled emulators differ ~2× in how much of the physical coupling
+structure they implement; the Nowack-style response-graph product measures
+exactly that.
 
 ---
 
@@ -389,8 +431,47 @@ empirically in two pilot iterations: per-mode Z std 1.225–1.259 vs target
 near-unit-memory regime costs −0.05 F1 vs the parent ceiling 0.853 at
 T=9600 — autocorrelation shrinks effective sample size but nowhere near the
 <0.4 collapse gate. MeshGNN training: **val corr 0.7068 after ONE epoch**
-(vs 0.4563 converged on the parent rung) — the high-skill regime the rung
-was built for is materializing; full 15-epoch result pending.
+(vs 0.4563 converged on the parent rung), plateau 0.7079 = **97.8% of the
+achievable one-step ceiling 0.724** (unpredictable variance = W⁺-injected
+mode innovations 0.086 + pixel noise 0.0125 against obs var 0.207) — the
+forecaster is at ceiling, not gradient-starved. Pixel-side E1 battery
+(`litext_e1_discovery_atmo_satv1.npy`): oracle 0.801 = ceiling exactly
+(aggregation lossless, F4 replicates); vmax_pix N̂=8, cos 0.999, **F1 0.793**
+(discovery price −0.008); corruption ladder ordered as parent, EXCEPT blur
+0.599 (was 0.892 > oracle on parent): with 4×-lower pixel noise, smearing's
+noise-averaging benefit disappears and cross-blob mixing costs recall —
+"benign blur" was a property of the noise level, not of blur.
+
+**R6-v1 POSTMORTEM — the saturated self-loop destroys the regime; v1 is a
+diagnostic, not the rung.** E3 arm B on the v1 checkpoint: ZERO detections,
+flat e-folds ≈ 4 steps for every mode (`litext_e3_dynarm_atmo_satv1.npy`).
+Cause, verified in data: the parent generator applies g_sat(m) = 0.5·m +
+0.5·tanh(m) to the lagged state INCLUDING the φ self-loop; at operating
+amplitude 1.23 the saturation derivative ≈ 0.66, so SMALL-SIGNAL memory is
+τ_eff = −1/ln(0.66·φ) ≈ 3 steps regardless of φ. Realized ACF(1) on v1 data:
+0.686–0.765 (τ_eff 2.7–3.7, spread 1.36×) vs designed 0.90–0.99 (10.5×). The
+same mechanism affects every rung of this family: hetdynamics_eqvar's
+"φ=0.92" mode realizes ACF(1)=0.74 (τ≈3.3). Consequences: (i) v1's E3 null is
+FAITHFUL — the true small-signal transfer is weak and fast, and the model at
+97.8% of ceiling mirrors it; (ii) all φ-labelled claims across the program
+describe realized memories ≤ 3.7 steps, not the nominal τ; (iii) the
+variance/ACF regime and the impulse-response regime of a saturated system
+are different regimes — measure both before claiming either.
+
+**R6-v2 generator** (same file, documented in-code): (a) self-loops LINEAR
+(realized memory = φ exactly), cross-terms keep the tanh saturation;
+(b) NL_BETA = 0 — the bounded bilinear forcing integrates under near-unit
+memory to ±β/(1−φ) ≈ ±15σ (v2 pilot: X7 std 26, random walk) — a
+regime-confound, dropped for this rung; (c) cross-coefficients DC-GAIN-
+MATCHED to the parent: c_new = c_parent·(1−φ_new[eff])/(1−φ_parent[eff]) ×
+0.5 — a global scale is the wrong knob for near-integrators, where each
+edge's integrated gain is c/(1−φ) (at parent-level DC gain the slow modes'
+cross-driven variance alone exceeds the eqvar target; ×0.5 makes eqvar
+reachable). Realized: ACF(1) within 0.009 of designed φ (0.903–0.995,
+τ 9.8→~200), per-mode std 1.20–1.27 (eqvar), radius 0.990. This is the
+"weak instantaneous, strong integrated teleconnection" structure of real
+slow climate modes. Regeneration + own ceiling + retrain + battery reruns:
+below.
 
 ---
 
