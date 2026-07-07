@@ -1,0 +1,8 @@
+W row-support overlap: max off-diag Jaccard = 0.5394, max off-diag mass overlap = 0.2125 (rows L1-normalized; 0 = perfectly disjoint)
+  [6/12] realisations done
+  [12/12] realisations done
+
+series              F1 vs GT      P      R  F1 vs (a)
+a_trueZ                0.867   0.77   0.99      1.000
+b_pooled_pixels        0.867   0.77   0.99      1.000
+saved -> results/aggregation_consistency_overlap02.npy
