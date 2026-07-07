@@ -1,8 +1,8 @@
 # Project summary — plain-language orientation
 
 *A one-read orientation for a collaborator who is not in this subfield. Written
-after the 2026-07-03 sessions, updated after 2026-07-06; reflects the
-reorganized repo layout.*
+after the 2026-07-03 sessions, updated after 2026-07-06 and 2026-07-07; reflects
+the reorganized repo layout.*
 
 ---
 
@@ -163,30 +163,98 @@ experiments ran on 2026-07-06 (`notes/literature_extension_results.md`):
   destroys *all* signal is perfectly "consistent" (nothing depends on anything,
   at any level) and scored near the top while being worthless. The fixed
   version — which also demands the map keep some signal and not create
-  near-duplicate modes — is running now. Either outcome is fine: if it ranks
-  candidates correctly we have our answer-key-free selector; if not, the
-  backup selector is agreement between the two independent channels above.
+  near-duplicate modes — was running as of this writing. Either outcome is
+  fine: if it ranks candidates correctly we have our answer-key-free selector;
+  if not, the backup selector is agreement between the two independent
+  channels above. (Outcome in the next section: it failed as a ranker, and the
+  backup became the plan — and then passed its first test.)
+
+## The July 7 sessions: the selector question answered, and two new worlds built
+
+Most of July 7 ran autonomously (two long agent sessions plus harvesting).
+Four things happened.
+
+**1. "Choosing without an answer key" is settled — and the answer has two
+halves.** The fixed selection scores from July 6 came back: still not good
+enough to *rank* candidate mode-maps (correlation with true quality ~0.5,
+against a bar of 0.8). But the failure had a clean shape: these consistency
+checks are trustworthy when they say *no* (a map that fails them really is
+bad) and untrustworthy when they say *yes* (a map that merges two modes into
+one, or destroys signal entirely, sails through). So consistency became a
+**screen**, not a judge. The judge is the backup idea: run both independent
+channels — read-the-activations and poke-the-model — and score each candidate
+map by how well the *graphs they produce agree with each other*. The naive
+version of this failed too (a bad map can agree with itself about a wrong
+graph), but a **crossed** version — compare *your* reading-channel graph
+against the poking-channel graphs of *all the other candidates* — predicts
+true accuracy almost perfectly (rank correlation +0.95 on the parent
+dataset). One caveat kept us honest: that rule was chosen after seeing the
+data, so it needed a fresh test on a dataset it had never seen. That test is
+the overlapping-blobs rung, below.
+
+**2. The geography rung (R2) produced the sharpest cautionary tale so far.**
+Give the network its grid coordinates as an extra input (as GraphCast gets)
+and it develops a perfect **address code** — internally it "knows" which mode
+is which — but the knowledge is pure position lookup: subtract the static
+address part and nothing about identity remains. Worse: the shortcut
+*substitutes* for physics. The address-equipped network forecasts exactly as
+well as the original, yet the poke-the-model test shows it implements only
+about half the true couplings the original had learned (the slow, long-range
+ones are gone). Standard skill metrics cannot see this difference at all.
+That is precisely the kind of statement the toolchain exists to make — and a
+warning that GraphCast's static inputs may hide the same trade.
+
+**3. The atmosphere rung (R6) took three tries and exposed a bug in our own
+world.** Building the "slow, nearly-deterministic like real weather" variant
+revealed that the *original* data generator had been quietly capping how
+long any mode could remember its past — a saturation in the equations meant
+that asking for a slow mode gave you a fast one. With that fixed (and
+coupling strengths set so each link is equally detectable), the new world is
+genuinely GraphCast-like: modes remember their past for 10–100 steps and one
+step ahead is ~99% predictable. On this world, two predictions were tested:
+(a) as predicted, the SAEs — which only ever see 3 frames — finally light up
+(mode detection roughly doubles), because in a slow world 3 frames actually
+contain the signal; (b) despite that, the network *still* uses one shared
+operator for all modes rather than per-mode mechanisms — our central negative
+finding survives even in the regime most favorable to overturning it. One
+surprise: the poke-the-model channel goes *silent* here (per-step influences
+are individually tiny; they only matter accumulated over long horizons), so
+the crossed-agreement judge can't run on this rung. Usefully, that
+inapplicability is detectable without any answer key, so the recipe knows
+when to fall back.
+
+**4. The overlapping-blobs rung (R1) is built, verified, and mid-run.** This
+is the rung where modes' footprints overlap (as real teleconnection patterns
+do) — and, by design, the fresh out-of-sample test of the crossed-agreement
+judge. The world is built to be identical to the parent in its dynamics
+(so any change in results is attributable to overlap alone, confirmed
+numerically), the answer is still recoverable in principle (ceiling checks
+pass), and a forecaster has been trained on it. The agent session ended
+partway through the measurement phase; what remains is mechanical: re-run
+the discovery battery and both channels on this world and read off one
+pre-registered number — does crossed agreement still predict true accuracy
+(bar: rank correlation ≥ 0.8)? No re-tuning allowed; the number gets
+reported whatever it is.
 
 ## Where it's headed
 
-1. **Finish the answer-key-free machinery**: the fixed selection scores (E2),
-   then E4 — calibrate how well *agreement* between the two independent
-   channels (read-the-activations vs poke-the-model) predicts actual accuracy,
-   because agreement is the only score computable on GraphCast. The July-6
-   result that the two channels disagree exactly where the network failed to
-   learn a coupling suggests disagreement is not just noise — it's diagnostic.
-2. **Rebuild SAVAR toward GraphCast, one property per rung (R1–R6)**:
-   overlapping blobs, geography-as-input, several coupled variables, many
-   modes, rollout training, and — added July 6 — an **"atmosphere-regime"
-   variant (R6)**: today one step of SAVAR is mostly unpredictable noise,
-   whereas one step of real weather is nearly deterministic; R6 makes all the
-   modes much slower-moving (and the observations cleaner) so the network —
-   and the SAEs, which only ever see 3 frames — finally operate in the
-   signal-rich setting the real target lives in.
-3. Each rung re-runs the same recipe and adds one row to a **transfer table**:
+1. **Finish R1**: run the remaining battery on the trained overlapping-blobs
+   forecaster and report the pre-registered out-of-sample number for the
+   crossed-agreement judge. This is the single most load-bearing pending
+   result: if it holds, the recipe has an answer-key-free way to pick its
+   mode-map and to say how much to trust the final graph.
+2. **Then calibrate the trust dial (E4-final)** by pooling agreement→accuracy
+   pairs across all the worlds built so far, so that on GraphCast an observed
+   agreement level translates into a defensible accuracy estimate.
+3. **Remaining rungs**: many modes at unknown count (R4), several coupled
+   physical variables (R3), rollout-trained forecasters (R5).
+4. Each rung re-runs the same recipe and adds one row to a **transfer table**:
    a sentence we can assert about GraphCast with a known, SAVAR-calibrated
    confidence.
-4. End goal unchanged: point the validated recipe at **GraphCast**.
+5. End goal unchanged: point the validated recipe at **GraphCast** — where the
+   product is now concrete: recover its learned causal graph *and* flag the
+   couplings it encodes but never implements (the R2/E3 finding made that a
+   deliverable, not a hope).
 
 ---
 
