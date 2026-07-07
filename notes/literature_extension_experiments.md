@@ -372,3 +372,39 @@ construction and becomes the research object.
   necessarily change it — score those against their own ceilings only.
 - **Compute**: everything before step 5 is CPU/analysis + minutes of GPU;
   training-heavy steps are batched late and parallelizable.
+
+---
+
+## 7. Post-session revisions (2026-07-07, after E1–E3)
+
+Results: [[literature_extension_results]]. The pipeline skeleton stands; four
+revisions:
+
+1. **E4 promoted to keystone.** E2's consistency scores failed the selection
+   bar (pre-reg composite Spearman +0.52 vs ≥0.8) — the pre-registered
+   fallback activates: cross-channel agreement carries BOTH selection (G2) and
+   confidence (G3). Consistency scores retained as a Stage-2 *screen* only
+   (their zeros are trustworthy; their ranking is not). E3's dissociation
+   result (channels disagree exactly where the model failed to learn a
+   coupling) upgrades E4's premise: disagreement is signed/diagnostic, not
+   noise — E4 should calibrate agreement→accuracy AND classify disagreement
+   (encoded-not-implemented vs channel error).
+2. **Scoring conventions.** Behavior-based variable matching (series
+   correlation, not footprint cosine) is the default everywhere — the shift5
+   lesson (footprint-matched "0.000" was really 0.835). The E1 battery reruns
+   once saving per-candidate edge SETS (agreement cells need graphs, not
+   counts). Never include the tested pair's own lags in a CI conditioning set.
+3. **Toolkit settled.** Stage 1 primary = varimax (k-means/DMD demoted to
+   baselines; Ising/Leiden SAE route parked until R4). Stage 4 recipe =
+   teacher-forced propagation + integral statistic (recall) + Volterra
+   deconvolution (zero-FP direct core); free rollout only as a
+   rollout-behaviour probe, never for discovery.
+4. **E3's bar redefined.** "Direct F1 ≥ 0.75" conflated method with model —
+   the frozen GNN implements only 9/12 couplings (verified vs analytic true
+   response; X5→X6, the 2nd-strongest true edge, has zero model transfer).
+   New bar: recall on model-implemented edges (9/9 now) + zero-FP deconv core
+   + reading-vs-poking disagreement correctly localizing unimplemented edges.
+
+Revised next-step order: E4-v1 (battery rerun w/ edge sets → agreement matrix
+→ calibration curve) → R2 + R6 in parallel → R1 → E4-final across rungs →
+R4/R5/R3 → GraphCast. Decision point unchanged (after E4-v1).
