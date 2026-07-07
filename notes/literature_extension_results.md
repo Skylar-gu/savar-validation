@@ -577,3 +577,33 @@ the shared-operator finding strengthened; the response channel found its
 scope boundary. The rung did exactly what it was built to do — including
 exposing a generator defect (saturated self-loop, τ_eff ≈ 3 cap) that
 retro-annotates every φ-labelled claim in the program.
+
+---
+
+## R1 — overlap rung (2026-07-07 session): OUT-OF-SAMPLE test of the pool-crossed selector
+
+`data_gen/generate_overlap.py` — fork of generate_hetdynamics.py (eqvar
+config). Dynamics BYTE-IDENTICAL to the parent rung: same φ band
+0.15–0.92, same 12-edge set/lags/coeffs, same eqvar innovation scaling,
+same T=2400 / 100 reals / DY_SCALE=0.05 / seeds (verified: corr(Z_overlap,
+Z_parent) = 0.9993–0.9996 per mode on realisation 0 — the only leak is the
+pixel-noise term W@eps_y through the new W). The saturated-self-loop caveat
+(small-signal τ_eff≈3) applies equally to parent and R1, as intended. ONLY
+the emission changed: isotropic Gaussians at the SAME 3×3-lattice centres,
+σ bisected to 6.27 px so max pairwise W-row cosine = 0.2000 exactly
+(mean off-diag cos 0.081; support Jaccard max 0.539 mean 0.324; mass
+overlap max 0.213; truncation 1e-3 of row max; W fixed across reals).
+Split 70/15/15 → data/splits_overlap02.
+
+**Gates (results/aggregation_consistency_overlap02.npy, 12 reals):**
+
+| gate | value | verdict |
+|---|---|---|
+| PCMCI+ on true Z (rung ceiling) | **F1 = 0.867** (P 0.77, R 0.99) | ≈ parent 0.853 — dynamics unchanged, PASS |
+| W-pooled pixels vs true Z | agreement **1.000**, same F1 0.867 | lossless at cos 0.2 — F4 boundary holds; NB trivially so on this generator family (Z := W@obs by construction; correlated pixel-noise leak W@eps_y is ~1e-2 std per mode, ∝ row cosines — too small to break τ=0 conditioning). The live overlap stress is on DISCOVERED maps + the model, below |
+
+Pre-registered rule verified before use: PX(A) = mean over B≠A of
+pair-F1(Ĝ_int(A), Ĝ_dyn(B)) (mode space, behavior-matched; <4 matches → 0),
+re-derived from the parent's saved battery byte-for-byte
+(+0.950 Spearman / +0.990 Pearson / +0.943 exact-lag). Applied verbatim
+here; no tuning.

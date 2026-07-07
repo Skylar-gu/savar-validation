@@ -351,11 +351,15 @@ def pcmci_one(args):
     res = pc.run_pcmciplus(tau_min=0, tau_max=TAU_MAX, pc_alpha=PC_ALPHA)
     return ri, detect(res["graph"])
 
-def score_candidate(What, mapping, series_fn, tag):
+INT_SETS_PATH = RES_DIR / f"litext_e4_int_partial{E1_TAG}.npy"
+
+def score_candidate(What, mapping, series_fn, tag, save_sets=False):
     agg = dict(tp=0, fp=0, fn=0)
+    dets_per_real = {}
     jobs = [(ri, series_fn(ri, What)) for ri in range(N_REAL)]
     with ProcessPoolExecutor(max_workers=4, initializer=_worker_init) as ex:
         for ri, det in ex.map(pcmci_one, jobs):
+            dets_per_real[ri] = sorted(det)
             mapped = set()
             fp_unmatched = 0
             for (c, e, tau) in det:
@@ -366,6 +370,13 @@ def score_candidate(What, mapping, series_fn, tag):
             agg["tp"] += len(gt & mapped)
             agg["fp"] += len(mapped - gt) + fp_unmatched
             agg["fn"] += len(gt - mapped)
+    if save_sets:
+        # per-real EDGE SETS in e4_agreement.py INT_PART format (plan §7.2) —
+        # lets E4's int stage reuse this battery instead of rerunning PCMCI
+        sets_part = (np.load(INT_SETS_PATH, allow_pickle=True).item()
+                     if INT_SETS_PATH.exists() else {})
+        sets_part[tag] = dets_per_real
+        np.save(INT_SETS_PATH, sets_part, allow_pickle=True)
     p, r, f1 = prf(agg["tp"], agg["fp"], agg["fn"])
     print(f"    {tag:<14} F1={f1:.3f} P={p:.2f} R={r:.2f} "
           f"(tp={agg['tp']} fp={agg['fp']} fn={agg['fn']})")
@@ -387,7 +398,8 @@ for name, What in CANDS.items():
         GRAPH[name] = partial[name]
         print(f"    {name:<14} (cached) F1={partial[name]['F1']:.3f}")
         continue
-    GRAPH[name] = score_candidate(What, FOOT[name]["mapping"], pix_series, name)
+    GRAPH[name] = score_candidate(What, FOOT[name]["mapping"], pix_series, name,
+                                  save_sets=True)
     partial[name] = GRAPH[name]
     np.save(PARTIAL, partial, allow_pickle=True)
 
