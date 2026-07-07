@@ -502,3 +502,78 @@ below.
 E1 battery saving per-candidate edge SETS (not just counts) so agreement cells
 can be computed against E3's saved detections; add behavior-based matching as
 the default scoring convention. Then R2/R6 rungs (cheap trains) and R1.
+
+---
+
+## R6-v3 readouts (harvested 2026-07-07 after agent session-limit cutoff)
+
+Rung anchors (committed earlier): realized ACF = designed φ within 0.009
+(τ genuinely 9.5–100 steps), spectral radius 0.990, **rung ceiling
+PCMCI-on-Z F1 = 0.509** (T=9600; the near-unit-memory regime's honest
+anchor), forecaster val corr 0.9245 = **98.8% of the achievable 0.936** —
+the GraphCast-like one-step regime (R² ≈ 0.9, signal-rich K=3 window,
+abundant gradient) is real on this rung.
+
+**E1 discovery battery** (`litext_e1_discovery_atmo.npy`; score / ceiling
+ratio in parens):
+
+| candidate | cos | F1 | vs ceiling |
+|---|---|---|---|
+| oracle | 1.000 | **0.509** | 1.00 — aggregation STILL lossless (F4 replicates at high memory) |
+| split7 | 0.963 | 0.477 | 0.94 |
+| km_act | 0.553 | 0.455 | 0.89 |
+| km_pix | 0.722 | 0.388 | 0.76 |
+| vmax_pix | 0.985 | 0.385 | 0.76 |
+| blur | 0.500 | 0.383 | 0.75 |
+| vmax_act | **0.863** | 0.214 | 0.42 |
+| acts:oracle | — | 0.312 | 0.61 |
+
+Footprint recovery stays excellent (vmax_pix 0.985; vmax_act 0.863 —
+*sharper* than the parent rung's 0.701) but graph recovery decouples from
+footprint quality: recall is the casualty everywhere (R 0.26–0.38, oracle
+included). The W-free discovery price is no longer ≈0: −0.12 (pixels)
+to −0.30 (internals) vs the rung ceiling, and the candidate ordering
+inverts (km_act > vmax_pix). At near-unit memory the graph, not the
+footprints, is the hard part.
+
+**SAE metric suite, 3 seeds** (`litext_sae_metrics_atmo_seed*.npy`) — the
+window-composition prediction (R6's SAE readout) **CONFIRMED**:
+
+| metric | parent (eqvar) | R6-v3 |
+|---|---|---|
+| Hungarian MCC | 0.406 ± 0.004 | **0.764 ± 0.013** (+88%) |
+| per-mode matched \|r\| | 0.12 → 0.63 (φ-graded) | **0.68–0.82, ALL modes** |
+| matched F1 | 0.512 | 0.563 ± 0.002 |
+| mean uniqueness | ≈ 0 | **−0.036 ± 0.006, STILL ≈ 0** |
+
+Fast modes' features are no longer noise-starved — alignment rises across
+the whole spectrum exactly as the variance-composition argument predicted.
+And the punchline: **uniqueness stays at zero even when skill and gradient
+are abundant** — the mode-agnostic shared operator / no-identity-code
+finding survives the regime change, its strongest form to date (it was
+never an artifact of gradient starvation).
+
+**Dynamical channel: DEAD on this rung** (`litext_e3_dynarm_atmo.npy`,
+`litext_e4_dyn_partial_atmo.npy`): zero detections through true W and
+through every candidate Ŵ (the only nonempty sets are fine16/split7
+half-twin artifacts). Cause: v3's per-step cross-coefficients are small by
+construction (equalized CI-detection SNR 0.08 — the realistic consequence
+of near-unit memory: matched total influence ⇒ tiny per-step couplings),
+and 240-window response averaging has far less power than PCMCI's 9600
+samples. Consequences: (i) **E4's pool-crossed selector is INAPPLICABLE
+here, not refuted** — its liveness precondition (a live dyn channel) fails,
+and that failure is itself detectable unsupervised (all-zero dyn graphs
+across all candidates ⇒ fall back to consistency screen + int channel);
+(ii) the out-of-sample test of pool-crossed moves to R1 (moderate regime);
+(iii) GraphCast implication: at 6 h cadence with realistic per-step
+coupling strengths, perturbation probing needs much larger window budgets
+or amplitudes — budget the Hakim–Masanam arm accordingly, and always run
+the liveness check before trusting two-channel agreement.
+
+**R6 verdict vs its stress-point list:** ceiling degrades gracefully
+(0.853 → 0.509, no collapse); discovery survives with a real but bounded
+price; consistency-screen zeros stay reliable; the SAE prediction confirmed;
+the shared-operator finding strengthened; the response channel found its
+scope boundary. The rung did exactly what it was built to do — including
+exposing a generator defect (saturated self-loop, τ_eff ≈ 3 cap) that
+retro-annotates every φ-labelled claim in the program.
