@@ -657,3 +657,40 @@ Compute: g6e.8xlarge (L40S restored in-place via `kernel6.18-devel` + driver
 ~5.5 min). Realisations regenerated deterministically (98/100 byte-identical to
 manifest; reals 006/007 differ by 1 float32 ULP from BLAS thread-order +
 CPU-microarch — invisible to PCMCI/DMD over 2400 steps).
+
+## R5 — rollout-trained forecaster (2026-07-08 session): does the selector survive GraphCast's training curriculum?
+
+R5 asks whether a forecaster trained on **multi-step rollout** (GraphCast's
+curriculum) changes what the recipe recovers. Built on the R1 overlap world so
+the comparison is clean: **only the training objective differs** (R5 rollout vs
+R1 single-step), same generator / graph / footprints / test reals. The R1
+MeshGNN checkpoint was fine-tuned with a horizon curriculum
+(`train/gnn/rollout_finetune.py`, schedule 1×2/4×4/8×6 → horizons 1→4→8, BPTT,
+12 epochs, LR 1e-4). **1-step skill preserved** (val RMSE 1.2955 → 1.2996) while
+**8-step rollout RMSE improved** (1.4756 → 1.4632) — rollout training did what it
+should without sacrificing one-step accuracy.
+
+**Rollout training measurably shifted the model's INTERNALS.** `vmax_act`
+coherences spread (`[0.88 0.76 0.72 …]` vs R1 `[0.93 0.92 0.92 0.91 …]`) and its
+behavior-matched truth-F1 moved 0.485 → 0.556 — the discovered internal modes
+changed. The **pixel side is unchanged** (`vmax_pix` F1 0.938, cos 0.987,
+identical to R1), confirming the shift is in the network, not the world.
+
+**HEADLINE — pool-crossed selector, still passes under rollout training
+(results/litext_e4_agreement_overlap02_rollout.npy):**
+
+| readout | R5 (rollout) | R1 (single-step) | bar | verdict |
+|---|---|---|---|---|
+| **Spearman(PX, truth-F1 pair)** | **+0.934** (Pearson +0.925) | +0.946 | ≥ 0.8 | **PASS** (≈ R1) |
+| Spearman(PX, exact-lag) | +0.907 | +0.941 | ≥ 0.8 | pass |
+| Same-Ŵ agreement (contrast) | +0.533 | +0.478 | — | fails 0.8, as R1 |
+| Dyn-channel liveness | LIVE (12/13) | LIVE (12/13) | — | applicable |
+| E2 consistency (S_total Spearman) | −0.077 | −0.154 | — | screen-not-ranker, as R1 |
+
+**Verdict — R5 PASSES.** Fine-tuning the forecaster on rollout changed its
+internal mode structure but **did not degrade the answer-key-free selector**
+(PX +0.934 ≈ R1 +0.946), and every supporting readout replicates (dyn live,
+same-Ŵ fails, E2 screen-not-ranker). This matters for the endgame: GraphCast is
+trained with exactly this rollout curriculum, and R5 shows the recipe transfers
+to rollout-trained models. Compute: warm-start fine-tune ~5.2 h on the L40S
+(horizon-8 epochs dominate); battery ~30 min, same box as R1.
