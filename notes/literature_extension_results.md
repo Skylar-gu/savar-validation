@@ -694,3 +694,56 @@ same-Ŵ fails, E2 screen-not-ranker). This matters for the endgame: GraphCast is
 trained with exactly this rollout curriculum, and R5 shows the recipe transfers
 to rollout-trained models. Compute: warm-start fine-tune ~5.2 h on the L40S
 (horizon-8 epochs dominate); battery ~30 min, same box as R1.
+
+## R4 — scale rung (2026-07-08 session): N=24 modes, unknown-N — Leiden scales, the selector does NOT
+
+R4 triples the mode count (8→24) on a larger grid (50→80), with N **unknown a
+priori**, to test (a) whether unknown-N community discovery (Leiden) beats
+fixed-N varimax at scale, and (b) whether the pool-crossed selector still holds.
+New generator `data_gen/generate_scale24.py` (24-node graph = the
+hetdynamics_eqvar 8-node motif tiled ×3 + 3 forward inter-block bridges;
+disjoint 16×16 blobs on 80×80; dynamics family byte-identical). New unknown-N
+discovery `sae/discover_leiden.py` (community detection → N̂; spectral-eigengap
+fallback used — leidenalg/igraph not installed). Forecaster: MeshGNN trained on
+scale24, val RMSE 0.4656 (VlCorr 0.464).
+
+**FINDING 1 — Leiden scales; varimax collapses (clear win).** At N=24 the
+fixed-rank operators break: `vmax_act` **F1 0.032**, `km_act`/`dmd_act` **0.000**
+(varimax found only ~12 of 24 modes). Unknown-N Leiden recovered **N̂=24**,
+matched **23/24** at cos 0.966, **F1 0.562** — second only to oracle (0.658).
+This confirms the pre-registered hypothesis that Ising/Leiden is favored over
+varimax at realistic mode counts: fixed-N Stage-1 does not survive the jump to
+24 modes; data-driven N̂ estimation is required.
+
+**FINDING 2 — the pool-crossed selector MISSES at scale.**
+
+| readout | value | bar | verdict |
+|---|---|---|---|
+| **Spearman(PX, truth-F1 pair)** | **+0.357** (Pearson +0.595) | ≥ 0.8 | **FAIL** |
+| Spearman(PX, exact-lag) | +0.321 | ≥ 0.8 | fail |
+| Dyn-channel liveness | **LIVE** (leiden \|dyn\|=58, oracle 40) | — | applicable — a real miss, NOT R6-style inapplicability |
+| E2 consistency (S_total Spearman) | **+0.559** (positive!) | ≥ 0.8 | below bar but flips sign vs N=8 (−0.15) |
+
+Dyn is live, so this is a genuine miss, not an inapplicable channel. PX collapsed
+into a compressed, noisy band (0.0–0.08 vs 0.2–0.5 at N=8) and did not track
+truth-F1 (oracle PX 0.074, leiden 0.060, but `vmax_act` PX 0.082 despite F1
+0.032 — an outlier that scrambles a 7-point Spearman). Cross-Ŵ agreement had
+weak signal (diag 0.217 vs off-diag 0.042).
+
+**Honest caveats — this is a flag for investigation, not a clean refutation.**
+(i) The candidate pool is **heterogeneous in resolution** (Leiden 24 modes vs
+varimax 12) — crossing graphs of different sizes muddies pair-F1. (ii) The pool
+**lacks the corrupted anchors** that gave R1/parent their controlled quality
+spread (8-mode-specific, gated off at N=24), so R4's selector test is on a
+different, weaker candidate distribution — not apples-to-apples with R1. (iii)
+Only **7 candidates**, so the Spearman is fragile to one outlier. A fair scale
+test needs scale-appropriate anchors and/or same-resolution pooling.
+
+**Verdict — R4 is SPLIT.** Leiden discovery scales cleanly (Finding 1, a real
+positive for the GraphCast route where N is unknown and large); but the
+pool-crossed selector **does not clear 0.8 at N=24** (Finding 2, +0.357) — the
+first rung where PX misses. Per protocol the number stands as reported; the
+caveats mark it as the priority follow-up (build scale-appropriate anchors,
+retest the selector at fixed candidate resolution) rather than a definitive
+"selector fails at scale." Compute: forecaster train ~4 h (20 epochs, L40S);
+E1 battery ~56 min (24-mode PCMCI), E4 ~62 min, on the g6e.8xlarge.
