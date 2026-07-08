@@ -60,10 +60,10 @@ COH_MIN  = float(os.environ.get("E1_COH", 0.25))
 STAGE    = os.environ.get("E1_STAGE", "all")
 PC_ALPHA = 0.05
 K        = 3
-N_MODES  = 8
-NY = NX  = 50
+N_MODES  = int(os.environ.get("E1_NMODES", 8))     # R4: unknown/larger mode count
+NY = NX  = int(os.environ.get("E1_GRID", 50))      # R4: larger grid (e.g. 80)
 L        = NY * NX
-HIDDEN   = 256
+HIDDEN   = int(os.environ.get("E1_HIDDEN", 256))
 MATCH_COS_MIN = 0.30
 SEED     = 0
 
@@ -278,6 +278,9 @@ BUILDERS = [("vmax_act", cand_varimax, S_ACT),
             ("km_act",   cand_kmeans,  S_ACT),
             ("km_pix",   cand_kmeans,  S_PIX[..., :T_EFF]),
             ("dmd_act",  cand_dmd,     S_ACT)]
+if "leiden" in BUILDER_SET:                          # R4: unknown-N pixel-side discovery
+    import discover_leiden
+    BUILDERS.append(("leiden", discover_leiden.cand_leiden, S_PIX[..., :T_EFF]))
 BUILDERS = [(n, f, fld) for n, f, fld in BUILDERS if n in BUILDER_SET]
 import time
 for name, fn, field in BUILDERS:
@@ -287,9 +290,10 @@ for name, fn, field in BUILDERS:
     print(f"  {name}: N-hat={What.shape[0]} in {time.time()-t0_:.0f}s "
           f"(coh floor {COH_MIN}; "
           f"coherences {np.sort(coh)[::-1][:What.shape[0]+2].round(2)})")
-for name, What in build_corrupted().items():
-    CANDS[name] = What
-    print(f"  {name}: C={What.shape[0]}")
+if N_MODES == 8 and os.environ.get("E1_NO_CORRUPT") != "1":   # R4: corrupted anchors are 8-mode-specific
+    for name, What in build_corrupted().items():
+        CANDS[name] = What
+        print(f"  {name}: C={What.shape[0]}")
 CANDS["oracle"] = W_TRUE / W_TRUE.sum(1, keepdims=True)
 # E1_ONLY: restrict the battery to a comma list of candidates (targeted reruns)
 if os.environ.get("E1_ONLY"):
@@ -318,7 +322,7 @@ def footprint_metrics(What):
 FOOT = {name: footprint_metrics(What) for name, What in CANDS.items()}
 print(f"\n[2] {'candidate':<10} {'N^':>3} {'match':>6} {'cos':>6} {'IoU':>6}")
 for name, fm in FOOT.items():
-    print(f"    {name:<10} {fm['n_hat']:>3} {fm['n_matched']:>4}/8 "
+    print(f"    {name:<10} {fm['n_hat']:>3} {fm['n_matched']:>4}/{N_MODES} "
           f"{fm['mean_cos']:>6.3f} {fm['mean_iou']:>6.3f}")
 
 if STAGE == "footprints":

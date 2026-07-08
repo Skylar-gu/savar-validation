@@ -72,7 +72,7 @@ CONS_FRAC = float(os.environ.get("E4_CONS", 0.5))
 N_MATCH_R = int(os.environ.get("E4_MATCH_NREAL", 6))
 SIGMA     = 1.0
 K         = 3
-NY = NX   = 50
+NY = NX   = int(os.environ.get("E4_GRID", 50))     # R4: larger grid (e.g. 80)
 L         = NY * NX
 
 paths = sorted(DATA_DIR.glob("realisation_*.npz"))
