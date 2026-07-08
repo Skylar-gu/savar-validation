@@ -747,3 +747,46 @@ caveats mark it as the priority follow-up (build scale-appropriate anchors,
 retest the selector at fixed candidate resolution) rather than a definitive
 "selector fails at scale." Compute: forecaster train ~4 h (20 epochs, L40S);
 E1 battery ~56 min (24-mode PCMCI), E4 ~62 min, on the g6e.8xlarge.
+
+## R3 — multivariate rung (2026-07-08 session): C coupled channels, cross-channel edges — selector PASSES
+
+R3 adds **C=2 observed channels per node** with **cross-channel edges** in Φ
+(NC = N·C = 16 stacked modes, channel-major), emission Ŵ = block-diagonal
+I_C ⊗ W (disjoint footprints shared across channels — isolates the multivariate
+axis from overlap). New generator `data_gen/generate_multivar.py` + channel-aware
+split + multivar MeshGNN (`train/gnn/gnn_forecaster_multivar.py`, val RMSE
+0.4363) + four `*_multivar.py` pipeline variants (discover/e4/acts/E2). Shared
+single-channel scripts left untouched.
+
+**Discovery: pixel side clean, acts side degenerate (documented).** `vmax_pix`
+F1 **0.755** (16/16 modes, cos 0.999), `km_pix` 0.685 — pixel builders separate
+all NC=16 modes cleanly. The **acts-based builders collapse**: `km_act`/`dmd_act`
+F1 **0.000**, `vmax_act` 0.033 — because the multivar MeshGNN carries one hidden
+vector per *spatial* node, so co-located modes `(ch0,n)`/`(ch1,n)` get identical
+pooled activations (channel-tiling I_C⊗W can't separate them). This limitation is
+documented in-code; it degrades the internal-readout arm, not the pixel arm.
+
+**HEADLINE — pool-crossed selector PASSES
+(results/litext_e4_agreement_multivar.npy):**
+
+| readout | value | bar | verdict |
+|---|---|---|---|
+| **Spearman(PX, truth-F1 pair)** | **+0.943** (Pearson +0.961) | ≥ 0.8 | **PASS** |
+| Spearman(PX, exact-lag) | +0.943 | ≥ 0.8 | pass |
+| Same-Ŵ agreement | +0.943 | — | (also high here) |
+| Dyn-channel liveness | **LIVE** (\|dyn_int\| 14–85, all candidates) | — | applicable |
+| E2 (multivar variant) | S_joint Spearman **+0.928** (n=6) | ≥ 0.8 | S_joint clears, other components mixed |
+
+PX ranks **monotonically** with truth-F1 (oracle/vmax_pix 0.31 at top ↔
+truthF1 0.78; vmax_act 0.025 at bottom ↔ truthF1 0.077). The selector works even
+though the acts-discovery arm is degenerate — because PX crosses the (clean)
+pixel-side int channel with the (live) dyn channel.
+
+**Verdict — R3 PASSES (+0.943).** The recipe transfers to the multivariate,
+cross-channel setting. **This also clarifies R4:** R3's candidate pool is
+resolution-homogeneous (all ~14–16 modes) and PX ranks cleanly; R4's pool was
+heterogeneous (Leiden 24 vs varimax 12) and PX scrambled — so **R4's miss is best
+read as candidate-pool heterogeneity, not a scale limitation of the selector
+per se**, strengthening the R4 follow-up plan (retest at fixed candidate
+resolution). Compute: multivar train ~1.5 h (20 epochs, L40S); E1 ~7 min, E4
+~25 min.
