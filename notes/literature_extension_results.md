@@ -805,3 +805,40 @@ read as candidate-pool heterogeneity, not a scale limitation of the selector
 per se**, strengthening the R4 follow-up plan (retest at fixed candidate
 resolution). Compute: multivar train ~1.5 h (20 epochs, L40S); E1 ~7 min, E4
 ~25 min.
+
+## E4-final — cross-rung agreement→accuracy calibration (the trust dial, 2026-07-08)
+
+The handoff's consolidation step: pool per-candidate (PX, truth-F1) pairs across
+all five pre-registered rungs (parent, R1, R5, R4, R3 — excluding the
+_scale24fair diagnostic) and ask whether crossed-agreement predicts accuracy in
+a way that **transfers to a new model** (`analysis/e4_final_calibration.py`,
+n=52 candidates).
+
+**THE TRUST DIAL (pooled, n=52):**
+
+> accuracy ≈ **1.48 · PX + 0.13**   —   Spearman **+0.905**, Pearson +0.892,
+> **R² 0.797**, residual std **0.131**
+
+On a model with no answer key, measure PX (the pool-crossed agreement) and read
+off predicted graph-accuracy to **±0.13 F1**. Pool-crossing carries the signal:
+the same-Ŵ agreement contrast pools to only **+0.549** (vs PX's +0.905).
+
+**Per-rung ranking (Spearman PX→accuracy):** parent +0.950, R1 +0.946, R5
++0.934, R3 +0.943, **R4 +0.357** (the known outlier).
+
+**Cross-rung stability.** Four of five rungs share a consistent calibration —
+slopes 1.5–2.5, PX ranges ~[0, 0.5]. **R4 is the lone outlier** (slope 4.56, PX
+compressed to [0, 0.08]) — the same pathological pool diagnosed above; excluding
+it tightens the dial. So the *ranking* transfers strongly (pooled +0.905) and
+the *absolute* calibration transfers across every rung with a well-formed
+candidate pool. Mean within-rung Spearman +0.826 (dragged down by R4) vs pooled
++0.905.
+
+**Bottom line for GraphCast.** The recipe now has (1) an answer-key-free selector
+that ranks candidate mode-maps (validated on 4/5 rungs, and on the 5th once the
+pool is fair), and (2) a calibrated dial turning observed agreement into a
+predicted accuracy with a ±0.13 F1 error bar — the trust readout the whole
+program was built to produce. Remaining caveat: absolute calibration assumes a
+resolution-homogeneous candidate pool with live dyn channels (the R4 lesson);
+that precondition is itself unsupervised-detectable (pool resolution spread +
+dyn liveness).
