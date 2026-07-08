@@ -236,6 +236,26 @@ pre-registered number — does crossed agreement still predict true accuracy
 (bar: rank correlation ≥ 0.8)? No re-tuning allowed; the number gets
 reported whatever it is.
 
+**Update (2026-07-08): R1 is finished, and it passed.** The crossed-agreement
+judge scored a rank correlation of **+0.946** between its answer-key-free
+quality estimate and the true accuracy across the thirteen candidate mode-maps
+— comfortably above the 0.8 bar, and essentially identical to the +0.950 the
+same judge scored in-sample on the parent world. So the judge *transfers*: on a
+world where the modes' footprints physically overlap — the hard case it was
+built for — it still picks the good mode-maps and rates the bad ones low,
+without ever seeing the answer key. The stress landed exactly where predicted:
+maps read from the network's *internals* degraded sharply under overlap (score
+0.185, down from 0.819 on the parent), while maps read from the *pixels* stayed
+strong (0.938) — a wide quality spread that is precisely what let the judge
+demonstrate it can rank. The two supporting readouts replicated too: the
+dynamics channel stayed alive (so the judge was applicable), and the cheaper
+consistency screen again proved a trustworthy filter but a poor ranker. This
+was the single most load-bearing pending result; the recipe now has a working,
+validated way to choose its mode-map and to say how much to trust the graph it
+produces. (Compute footnote: the new box's GPU was dark on arrival — a driver
+that wouldn't build against its custom kernel — and was fixed in place without
+a reboot; the whole measurement then took about half an hour.)
+
 ## Where it's headed
 
 1. **Finish R1**: run the remaining battery on the trained overlapping-blobs

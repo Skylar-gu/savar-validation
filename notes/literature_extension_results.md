@@ -607,3 +607,53 @@ pair-F1(Ĝ_int(A), Ĝ_dyn(B)) (mode space, behavior-matched; <4 matches → 0),
 re-derived from the parent's saved battery byte-for-byte
 (+0.950 Spearman / +0.990 Pearson / +0.943 exact-lag). Applied verbatim
 here; no tuning.
+
+**E1 discovery battery (results/litext_e1_discovery_overlap02.npy; 13
+candidates + 2 internal-readout probes, behavior-matched, 24 reals).** Wide
+quality spread, as the selector test needs. Graph-F1 (Ĝ_int vs truth):
+vmax_pix **0.938**, blur 0.898, oracle 0.852, acts:oracle 0.800, split7 0.772,
+shift5 0.750, merge01 0.661, km_act 0.637, acts:km_act 0.540, dmd_act 0.472,
+km_pix 0.446, coarse4 0.211, fine16 0.187, **vmax_act 0.185**, diag8 0.084.
+**R1 stress signature confirmed:** discovery from network *internals* collapses
+under footprint overlap — vmax_act **0.185** (footprint cos 0.541, 5/8 matched)
+vs the parent's 0.819 — while the pixel-side vmax_pix stays healthy at 0.938
+(footprints build clean, cos 0.987). Overlap degrades the internals channel
+specifically, exactly the stress E2 was built to surface.
+
+**Dyn-channel liveness: LIVE.** 12/13 carry nonzero PX; only fine16 degenerates
+(PX 0.000, empty dyn graph — the faithfulness pathology, as on the parent).
+DY_SCALE 0.05 behaved as the parent, so the selector is applicable (no R6-style
+dead-channel inapplicability).
+
+**HEADLINE — pool-crossed selector, OUT-OF-SAMPLE
+(results/litext_e4_agreement_overlap02.npy):**
+
+| readout | value | bar | verdict |
+|---|---|---|---|
+| **Spearman(PX, truth-F1 pair)** | **+0.946** (Pearson +0.919) | ≥ 0.8 | **PASS** |
+| Spearman(PX, truth-F1 exact-lag) | +0.941 | ≥ 0.8 | pass |
+| Same-Ŵ agreement (contrast) | +0.478 (Pearson +0.557) | — | fails 0.8, as parent (+0.38) — negative control: raw agreement without pool-crossing does NOT rank |
+
+The pre-registered number clears the bar OUT-OF-SAMPLE and matches the parent's
+in-sample +0.950 essentially exactly (+0.946). The crossed-agreement judge
+transfers to the overlap regime: it ranks candidate-map quality without the
+answer key. PX orders the field correctly (blur/vmax_pix/oracle high PX ↔ high
+truth-F1; fine16/coarse4/diag8 low ↔ low), the only inversions being
+small-magnitude ties in the low tail.
+
+**E2 consistency screen (results/litext_e2_adag_v2_overlap02.npy; 6 reals,
+α=0.01):** replicates screen-not-ranker. Composite S_total Spearman vs truth-F1
+= **−0.154** (component ranks: S_agree +0.341 the only positive; S_info −0.016,
+S_dup −0.060, S_suff −0.154). As on the parent, consistency is a trustworthy
+*screen* but NOT a *ranker* of accuracy — the S_suff sufficiency term collapses
+to 0 for 12/13 candidates, flattening S_total. Useful failure, replicated at
+overlap 0.2.
+
+**Verdict — R1 PASSES.** The recipe now has an answer-key-free selector with a
+demonstrated OUT-OF-SAMPLE trust dial (PX Spearman **+0.946 ≥ 0.8**) that
+survives non-orthogonal footprints — the single load-bearing pending result.
+Compute: g6e.8xlarge (L40S restored in-place via `kernel6.18-devel` + driver
+595, no reboot); full chain ~30 min (E1 ~16 min on 30 workers, E4 ~10 min, E2
+~5.5 min). Realisations regenerated deterministically (98/100 byte-identical to
+manifest; reals 006/007 differ by 1 float32 ULP from BLAS thread-order +
+CPU-microarch — invisible to PCMCI/DMD over 2400 steps).

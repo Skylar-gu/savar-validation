@@ -270,7 +270,7 @@ every rung, scored against that rung's own PCMCI-on-Z ceiling.
 
 | rung | change | GraphCast property matched | expected stress point | cost |
 |---|---|---|---|---|
-| R1 **overlap** | non-disjoint W (cosine overlap 0.2 → 0.5), `future_plans` recipe | non-orthogonal physical modes | Stage 1 footprints blur; Stage 2 gate goes from trivially-passed (F4) to live — the rung E2 was built for | ~2 d |
+| R1 **overlap** | non-disjoint W (cosine overlap 0.2 → 0.5), `future_plans` recipe | non-orthogonal physical modes | Stage 1 footprints blur; Stage 2 gate goes from trivially-passed (F4) to live — the rung E2 was built for | ~2 d → **DONE 2026-07-08: PX Spearman +0.946 ≥ 0.8 (OUT-OF-SAMPLE PASS, ≈ parent in-sample +0.950); internals vmax_act F1 0.185 vs pixels vmax_pix 0.938; dyn live; same-Ŵ contrast +0.478 fails as parent; E2 screen-not-ranker replicates (S_total −0.154)** |
 | R2 **static inputs** | concat sin/cos(x,y) + hub flag to GNN input (next_steps D2, unrun) | lat/lon/orography channels — identity as *content* | may create the first genuine what-code → re-run P1-withheld; if attention can now self-localize, Stage 1 gains a content-based candidate | ~4 h train + reruns |
 | R3 **multivariate** | 2–3 coupled observed channels per node, cross-channel edges in Φ | coupled atmospheric fields | Ŵ must become (channel × space); cross-channel edges test PCMCI+ conditioning | ~3 d |
 | R4 **scale** | N = 24 modes, larger grid, unknown-N discovery | realistic mode count; N unknown a priori | N̂ estimation (Stage 1) and PCMCI+ parent search; Ising/Leiden favored over varimax here | ~3 d |
