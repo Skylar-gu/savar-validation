@@ -748,6 +748,21 @@ retest the selector at fixed candidate resolution) rather than a definitive
 "selector fails at scale." Compute: forecaster train ~4 h (20 epochs, L40S);
 E1 battery ~56 min (24-mode PCMCI), E4 ~62 min, on the g6e.8xlarge.
 
+**Follow-up diagnostic (NOT a re-registered result — a why-did-it-miss probe).**
+Rebuilt the candidate pool to be resolution-homogeneous: leiden + oracle +
+blur/shift5/diag8 (24-mode synthetic anchors from the oracle W; `build_corrupted`
+generalized to any N — coarse4→N/2, split7→last mode). PX rose **+0.357 →
++0.667** with **Pearson +0.963** — i.e. on a fair pool the selector's score
+tracks true quality almost perfectly *linearly*, confirming R4's miss was mostly
+**candidate-pool heterogeneity** (varimax collapse to 12 vs Leiden 24), not a
+scale limit. The residual sub-0.8 *rank* correlation is one pathological anchor:
+`shift5` got a near-dead dyn channel (|dyn|=3) and inconsistent E1/E4 matching,
+inverting the order over just 5 candidates. **Deliberately not iterated further**
+— dropping anchors until PX clears 0.8 would be tuning-to-pass (violates the
+pre-registered "do not tune"). Pre-registered R4 result stands at +0.357 (miss);
+this probe shows the core signal survives at scale (Pearson +0.963). A clean
+scale test needs a larger fair pool with live-dyn anchors, pre-registered.
+
 ## R3 — multivariate rung (2026-07-08 session): C coupled channels, cross-channel edges — selector PASSES
 
 R3 adds **C=2 observed channels per node** with **cross-channel edges** in Φ

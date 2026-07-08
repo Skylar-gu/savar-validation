@@ -241,13 +241,14 @@ def build_corrupted():
     def norm(M):
         return M / np.maximum(M.sum(1, keepdims=True), 1e-12)
     out["merge01"] = norm(np.vstack([(W_TRUE[0] + W_TRUE[1])[None], W_TRUE[2:]]))
-    out["coarse4"] = norm(np.stack([W_TRUE[2*i] + W_TRUE[2*i+1] for i in range(4)]))
-    w7 = W_TRUE[7].reshape(NY, NX)
+    out["coarse4"] = norm(np.stack([W_TRUE[2*i] + W_TRUE[2*i+1] for i in range(N_MODES // 2)]))
+    _last = N_MODES - 1                                       # was hardcoded 7 (=N-1 at N=8)
+    w7 = W_TRUE[_last].reshape(NY, NX)
     cols = np.where(w7.sum(0) > 0)[0]
     mid = cols[len(cols)//2]
     lft, rgt = w7.copy(), w7.copy()
     lft[:, mid:] = 0; rgt[:, :mid] = 0
-    out["split7"] = norm(np.vstack([W_TRUE[:7], lft.reshape(1, L), rgt.reshape(1, L)]))
+    out["split7"] = norm(np.vstack([W_TRUE[:_last], lft.reshape(1, L), rgt.reshape(1, L)]))
     halves = []
     for j in range(N_MODES):
         wj = W_TRUE[j].reshape(NY, NX)
@@ -290,7 +291,7 @@ for name, fn, field in BUILDERS:
     print(f"  {name}: N-hat={What.shape[0]} in {time.time()-t0_:.0f}s "
           f"(coh floor {COH_MIN}; "
           f"coherences {np.sort(coh)[::-1][:What.shape[0]+2].round(2)})")
-if N_MODES == 8 and os.environ.get("E1_NO_CORRUPT") != "1":   # R4: corrupted anchors are 8-mode-specific
+if os.environ.get("E1_NO_CORRUPT") != "1":   # corrupted anchors (now N-general; per-mode ops scale, coarse4/split7 generalized)
     for name, What in build_corrupted().items():
         CANDS[name] = What
         print(f"  {name}: C={What.shape[0]}")
