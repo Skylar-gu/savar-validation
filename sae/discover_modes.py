@@ -357,7 +357,7 @@ def score_candidate(What, mapping, series_fn, tag, save_sets=False):
     agg = dict(tp=0, fp=0, fn=0)
     dets_per_real = {}
     jobs = [(ri, series_fn(ri, What)) for ri in range(N_REAL)]
-    with ProcessPoolExecutor(max_workers=4, initializer=_worker_init) as ex:
+    with ProcessPoolExecutor(max_workers=min(30, max(1, (os.cpu_count() or 6) - 2)), initializer=_worker_init) as ex:
         for ri, det in ex.map(pcmci_one, jobs):
             dets_per_real[ri] = sorted(det)
             mapped = set()

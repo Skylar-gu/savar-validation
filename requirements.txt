@@ -6,6 +6,7 @@ scipy==1.13.1
 scikit-learn==1.6.1
 matplotlib==3.9.4
 tigramite==5.2.10.1
+pydmd==2025.8.1          # DMD candidate builder in sae/discover_modes.py (E1 dmd_act)
 
 # torch was installed as the CUDA 12.4 build (2.6.0+cu124). PyPI only serves the
 # CPU/generic wheel; for the GPU build (CNN/SAE training) install with:

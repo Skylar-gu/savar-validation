@@ -152,7 +152,7 @@ def run_int_battery():
             obs = np.load(paths[ri])["observations"].astype(np.float64)
             jobs.append((ri, (What @ obs).T))
         dets = {}
-        with ProcessPoolExecutor(max_workers=4, initializer=_worker_init) as ex:
+        with ProcessPoolExecutor(max_workers=min(30, max(1, (os.cpu_count() or 6) - 2)), initializer=_worker_init) as ex:
             for ri, det in ex.map(pcmci_one, jobs):
                 dets[ri] = det
         part[name] = dets
