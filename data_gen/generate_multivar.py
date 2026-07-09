@@ -248,6 +248,12 @@ print(f"  Extended-VAR spectral radius: {spectral_radius:.4f}  "
       f"({'STABLE' if spectral_radius < 1 else 'UNSTABLE'})")
 print(f"  Output: {OUT_DIR}/\n")
 
+# ── seasonal MODES: designated NODES carry intrinsic periodic dynamics in every channel
+SEAS_MODES   = [int(x) for x in os.environ.get("SEAS_MODES", "").split(",") if x != ""]
+SEAS_PERIODS = [float(x) for x in os.environ.get("SEAS_PERIODS", "24,168,730").split(",")]
+SEAS_AMP     = float(os.environ.get("SEAS_AMP", "1.5"))
+SEAS_PHASE   = [float(x) for x in os.environ.get("SEAS_PHASE", "0,0,0").split(",")]
+
 t_start = time.time()
 max_abs_global = 0.0
 
@@ -255,6 +261,11 @@ for seed in range(N_REALISATIONS):
     rng = np.random.default_rng(seed)
     # per-channel innovations; INNOV_SCALE (length N) tiled across channels
     eps_x = draw_innovations(rng, (C, N, total_T)) * INNOV_SCALE[None, :, None]
+    if SEAS_MODES:                       # seasonal node -> periodic in every channel
+        _tv = np.arange(total_T)
+        for _k, _mi in enumerate(SEAS_MODES):
+            eps_x[:, _mi, :] += SEAS_AMP * np.sin(2.0*np.pi*_tv/SEAS_PERIODS[_k % len(SEAS_PERIODS)]
+                                                  + SEAS_PHASE[_k % len(SEAS_PHASE)])
     eps_y = EPS_Y_STD * rng.standard_normal((C, L, total_T))
     noise_field = np.stack([W_plus @ eps_x[ch] + eps_y[ch] for ch in range(C)], axis=0)
 
@@ -276,6 +287,10 @@ for seed in range(N_REALISATIONS):
                                        NG_SKEW, NG_DF], dtype=np.float32),
         mv_meta            = np.array([N, C, L, NC, tau_max], dtype=np.int64),
         metadata           = np.array([N, L, T, DY_SCALE, seed, spectral_radius]),
+        seas_modes         = np.array(SEAS_MODES, dtype=np.int32),
+        seas_periods       = np.array([SEAS_PERIODS[k % len(SEAS_PERIODS)]
+                                       for k in range(len(SEAS_MODES))], dtype=np.float32),
+        seas_amp           = np.float32(SEAS_AMP),
     )
 
     if (seed + 1) % 10 == 0:

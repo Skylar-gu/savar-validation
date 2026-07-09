@@ -239,6 +239,12 @@ print(f"  NL_ALPHA={NL_ALPHA} NL_BETA={NL_BETA}  {NG_DIST}(α={NG_SKEW})  DY_SCA
 print(f"  Linear-skeleton spectral radius: {spectral_radius:.4f}  ({'STABLE' if spectral_radius<1 else 'UNSTABLE'})")
 print(f"  Output: {OUT_DIR}/\n")
 
+# ── seasonal MODES: designated modes carry intrinsic periodic dynamics ──────
+SEAS_MODES   = [int(x) for x in os.environ.get("SEAS_MODES", "").split(",") if x != ""]
+SEAS_PERIODS = [float(x) for x in os.environ.get("SEAS_PERIODS", "24,168,730").split(",")]
+SEAS_AMP     = float(os.environ.get("SEAS_AMP", "1.5"))
+SEAS_PHASE   = [float(x) for x in os.environ.get("SEAS_PHASE", "0,0,0").split(",")]
+
 t_start = time.time()
 max_abs_global = 0.0
 
@@ -246,6 +252,11 @@ for seed in range(N_REALISATIONS):
     rng = np.random.default_rng(seed)
     eps_x = draw_innovations(rng, (N, total_T))
     eps_x *= INNOV_SCALE[:, None]
+    if SEAS_MODES:                       # inject seasonal oscillation into mode driving signal
+        _tv = np.arange(total_T)
+        for _k, _mi in enumerate(SEAS_MODES):
+            eps_x[_mi] += SEAS_AMP * np.sin(2.0*np.pi*_tv/SEAS_PERIODS[_k % len(SEAS_PERIODS)]
+                                            + SEAS_PHASE[_k % len(SEAS_PHASE)])
     eps_y = EPS_Y_STD * rng.standard_normal((L, total_T))
     noise_field = W_plus @ eps_x + eps_y
 
@@ -268,6 +279,10 @@ for seed in range(N_REALISATIONS):
                                        NG_SKEW, NG_DF], dtype=np.float32),
         sc_meta            = np.array([N, GRID, size, N_BLOCKS], dtype=np.float32),
         metadata           = np.array([N, L, T, DY_SCALE, seed, spectral_radius]),
+        seas_modes         = np.array(SEAS_MODES, dtype=np.int32),
+        seas_periods       = np.array([SEAS_PERIODS[k % len(SEAS_PERIODS)]
+                                       for k in range(len(SEAS_MODES))], dtype=np.float32),
+        seas_amp           = np.float32(SEAS_AMP),
     )
 
     if (seed + 1) % 10 == 0 or seed == 0:
