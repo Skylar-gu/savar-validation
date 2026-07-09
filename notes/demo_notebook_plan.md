@@ -53,12 +53,20 @@ with latent-innovation cov $D_x=I_N$ and per-pixel cov $D_y=I_L$. $D_y=I_L$
 guarantees $\Sigma_y\succ0$. So each mode carries independent innovations, smeared
 onto the grid by its blob, plus white per-pixel noise.
 
-### 1.5 Optional seasonality (used in the diurnal rung)
-An additive periodic trend, same phase everywhere (optionally spatially weighted):
+### 1.5 Seasonality as *seasonal modes* (not a global forcing)
+Seasonality is **not** an additive field applied uniformly to every pixel — that
+would contaminate all modes identically and just create a trivial common trend.
+Instead, **designated modes carry an intrinsic periodic component in their own
+driving signal**, so their footprint is a genuine spatial mode whose time-course is
+diurnal / weekly / annual:
 $$
-s(t)=A\,\sin\!\Big(\tfrac{2\pi}{P}\,t\Big),\qquad X(t)\mathrel{+}= s(t)\,[\,\odot\ w_{\text{seas}}\,].
+\varepsilon_i(t)\mathrel{+}= A\,\sin\!\Big(\tfrac{2\pi}{P_i}\,t+\phi_i\Big)\quad\text{for }i\in\text{SEAS\_MODES},
 $$
-$A$ = amplitude, $P$ = period, $w_{\text{seas}}$ = optional per-pixel weight.
+added to that mode's innovation before the VAR recurrence. The cycle then
+**propagates to the mode's causal children** through $G$ (a seasonal parent imposes
+its period on its effects) — creating realistic **periodic confounding** between
+co-periodic modes, which is exactly the recovery stress we want to test. Knobs:
+`SEAS_MODES`, `SEAS_PERIODS`, `SEAS_AMP`, `SEAS_PHASE`.
 
 ### 1.6 Optional external forcing (used in the regime rung)
 Piecewise step forcing on chosen modes over time windows $[t_1,t_2]$: a constant
@@ -83,8 +91,9 @@ linear-Gaussian world makes the optimal forecaster essentially linear, so it is 
 weak stand-in for GraphCast. The demo's headline world layers on five realism
 mechanisms (each already has a generator; `generate_finecadence.py` carries most):
 
-1. **Seasonality** — diurnal + annual additive forcing $s(t)=A\sin(2\pi t/P)$
-   (+ afternoon heteroskedasticity). Stresses **stationarity**.
+1. **Seasonality** — *seasonal modes*: designated modes carry an intrinsic
+   diurnal/annual oscillation in their driving signal (§1.5), propagating to their
+   causal children. Stresses **stationarity** + **periodic confounding**.
 2. **Non-linearity** — in mode space, *before* the linear map: saturating
    self-term $g(m)=(1-\alpha)m+\alpha\tanh(m)$ plus **bilinear advective** coupling
    on lag-1 cross-edges (scaled by $\beta$, tanh-bounded). Stresses the **linear
@@ -143,6 +152,11 @@ call with a different data tag.
 ---
 
 ## 4. Robustness tests — does the method survive realistic mechanisms?
+
+**CI test default is now `RobustParCorr`** (rank-transformed ParCorr) everywhere —
+E1 and E4 default `*_CITEST=robustparcorr`. It matched plain ParCorr on the
+skewnorm worlds (Jaccard 0.909, one fewer false edge) and is strictly safer under
+non-Gaussian marginals at negligible cost. `*_CITEST=parcorr` reverts.
 
 Every mechanism stresses a specific assumption in the recipe. The **primary test is
 always the same**: does `Spearman(PX, truth-F1) ≥ 0.8` still hold? Each row adds one

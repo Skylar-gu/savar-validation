@@ -109,6 +109,14 @@ NG_SKEW = float(os.environ.get("NG_SKEW", 4.0))    # skew-normal shape alpha
 NG_DF   = float(os.environ.get("NG_DF",   5.0))    # Student-t dof
 
 N_REALISATIONS = int(os.environ.get("N_REALISATIONS", 100))
+
+# ── seasonal MODES (not a global forcing): designated modes carry an intrinsic
+#    periodic component in their own driving signal, so their footprint is a real
+#    spatial mode whose time-course is diurnal/annual. Off by default (SEAS_MODES="").
+SEAS_MODES   = [int(x) for x in os.environ.get("SEAS_MODES", "").split(",") if x != ""]
+SEAS_PERIODS = [float(x) for x in os.environ.get("SEAS_PERIODS", "24,168,730").split(",")]
+SEAS_AMP     = float(os.environ.get("SEAS_AMP", "1.5"))   # amplitude vs unit-var innovations
+SEAS_PHASE   = [float(x) for x in os.environ.get("SEAS_PHASE", "0,0,0").split(",")]
 # default (DY_SCALE=0.05) keeps the canonical dir; other levels get a suffix so a
 # sweep never clobbers the existing dataset.
 _SUFFIX = "" if abs(DY_SCALE - 0.05) < 1e-9 else f"_dy{DY_SCALE:g}".replace(".", "p")
@@ -197,6 +205,14 @@ skew_check = None
 for seed in range(N_REALISATIONS):
     rng = np.random.default_rng(seed)
     eps_x = draw_innovations(rng, (N, total_T))
+    # seasonal modes: add an intrinsic oscillation to the driving signal of the
+    # designated mode(s) — makes that MODE diurnal/annual, not a global forcing.
+    if SEAS_MODES:
+        _tv = np.arange(total_T)
+        for _k, _mi in enumerate(SEAS_MODES):
+            _P = SEAS_PERIODS[_k % len(SEAS_PERIODS)]
+            _ph = SEAS_PHASE[_k % len(SEAS_PHASE)]
+            eps_x[_mi] += SEAS_AMP * np.sin(2.0 * np.pi * _tv / _P + _ph)
     eps_y = EPS_Y_STD * rng.standard_normal((L, total_T))
     if seed == 0:
         m = eps_x.mean(); s = eps_x.std()
@@ -219,6 +235,10 @@ for seed in range(N_REALISATIONS):
         ng_meta            = np.array([{"gaussian":0,"skewnorm":1,"t":2}[NG_DIST],
                                        NG_SKEW, NG_DF], dtype=np.float32),
         metadata           = np.array([N, L, T, DY_SCALE, seed, spectral_radius]),
+        seas_modes         = np.array(SEAS_MODES, dtype=np.int32),
+        seas_periods       = np.array([SEAS_PERIODS[k % len(SEAS_PERIODS)]
+                                       for k in range(len(SEAS_MODES))], dtype=np.float32),
+        seas_amp           = np.float32(SEAS_AMP),
     )
 
     if (seed + 1) % 10 == 0:

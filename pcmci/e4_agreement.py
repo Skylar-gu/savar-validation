@@ -135,9 +135,15 @@ def _worker_init():
 def pcmci_one(args):
     ri, series = args
     from tigramite.data_processing import DataFrame
-    from tigramite.independence_tests.parcorr import ParCorr
     from tigramite.pcmci import PCMCI
-    pc = PCMCI(dataframe=DataFrame(series), cond_ind_test=ParCorr(), verbosity=0)
+    _ci = os.environ.get("E4_CITEST", "robustparcorr").lower()
+    if _ci == "parcorr":
+        from tigramite.independence_tests.parcorr import ParCorr
+        ci_test = ParCorr()
+    else:  # default: rank-transformed ParCorr — robust to non-Gaussian marginals
+        from tigramite.independence_tests.robust_parcorr import RobustParCorr
+        ci_test = RobustParCorr()
+    pc = PCMCI(dataframe=DataFrame(series), cond_ind_test=ci_test, verbosity=0)
     res = pc.run_pcmciplus(tau_min=0, tau_max=TAU_MAX, pc_alpha=PC_ALPHA)
     return ri, detect(res["graph"])
 
