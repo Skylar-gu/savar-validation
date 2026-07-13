@@ -37,3 +37,7 @@ __pycache__/
 
 # Isolated venv for causalnex/DYNOTEARS baseline (numpy<1.24, pandas<2.0)
 .venv_causalnex/
+.venv/
+
+# Compat symlink to this repo itself (old ~/savar-project path; remove later)
+savar-project
