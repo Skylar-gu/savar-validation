@@ -34,7 +34,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import os, sys, time, glob
-sys.stdout.reconfigure(line_buffering=True)
+if hasattr(sys.stdout, "reconfigure"):  # absent on Jupyter's OutStream
+    sys.stdout.reconfigure(line_buffering=True)
 
 # ── config ───────────────────────────────────────────────────────────────────
 K          = 3

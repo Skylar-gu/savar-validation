@@ -966,7 +966,7 @@ print("\nTAKEAWAY: from a forecaster we cannot check, PX (measured with NO answe
 
 
 # %% [markdown]
-# ## Appendix — robustness: does the method survive realistic mechanisms? (PENDING)
+# ## Appendix — robustness: does the method survive realistic mechanisms?
 #
 # The linear-Gaussian parent is the cleanest signal; the five toggles of cell 0
 # each stress one recipe assumption on its own before combining. **The CI-test
@@ -998,13 +998,107 @@ print("\nTAKEAWAY: from a forecaster we cannot check, PX (measured with NO answe
 # - **Preconditions recheck** per world: dynamics *live* (else PX inapplicable, cf.
 #   R6), pool *resolution-homogeneous* (cf. R4).
 #
-# **Status:** the isolation rungs for non-linearity (`ng_dist="gaussian",
-# nl_alpha=0.5`) and non-Gaussianity (`nl_alpha=0, ng_dist="skewnorm"`) are the
-# first robustness rungs; each still needs its own train → E1 → E4.
-# **No robustness numbers are reported here** — this section is a placeholder
-# pending those runs (seasonal / nonlinear / non-Gaussian currently running).
+# ### Results (run 2026-07-15/16; `out/orchestrate_robust.sh`, results committed)
+#
+# | mechanism | world tag | PX Spearman | Pearson | verdict |
+# |---|---|---|---|---|
+# | **Non-Gaussianity** (skewnorm innovations) | `_linskew` | **+0.909** | +0.946 | **PASS** |
+# | **All combined** (realistic regime) | `_finecadence` | **+0.869** | +0.951 | **PASS** |
+# | **Non-linearity** (bilinear, α = 0.5) | `_nlgauss` | +0.624 | +0.972 | MISS (rank only — see reading) |
+# | **Seasonality, raw** | `_overlapseas_raw` | +0.132 | +0.333 | MISS |
+# | **Seasonality, deseasonalized** | `_overlapseas_deseas` | +0.769 | +0.789 | near-miss |
+#
+# **Mechanism diagnostics:**
+# - **Non-linearity CI ablation** (`pcmci/ci_test_ablation.py`): ParCorr ≡
+#   RobustParCorr (Jaccard 1.000, F1 0.815 vs truth); CMIknn reaches F1 0.957 by
+#   dropping 4 false-positive edges while keeping recall. The linear CI test is
+#   **edge-recall-preserving** under this non-linearity, at a cost of ~4 spurious
+#   edges — and CMIknn costs 51,652 s vs 1 s, so RobustParCorr stays the default.
+# - **Non-Gaussianity**: RobustParCorr F1 0.923 vs ParCorr 0.889 on the skewnorm
+#   world; **FP calibration near-nominal for both** (α = 0.05 → observed
+#   0.060–0.065 on 200 cross-realisation null pairs) — ParCorr p-values are not
+#   badly miscalibrated under skew. Pass criterion met.
+#
+# **Reading the misses** (per-candidate diagnostics, dyn *live* on all four worlds
+# so PX applies everywhere):
+# - **`nlgauss`** — the mid-pool is 8 candidates within **0.017 of PX** spanning
+#   **0.29 of truth-F1**: in-cluster ranking is noise (excluding the two PX = 0
+#   degenerates, Spearman drops to +0.382). But the *top-pick cost is small*:
+#   PX picks `shift5` (F1 0.826) vs true best `blur` (0.883), −0.057. Under
+#   strong non-linearity PX still **screens** out bad decompositions
+#   (coarse4/diag8/fine16) and its calibration line holds (Pearson +0.97), but it
+#   is not a fine **ranker** among near-ties — the E2 lesson, now for PX.
+# - **Seasonality** — deseasonalization is a **required preprocessing step**
+#   (+0.132 raw → +0.769 deseasonalized). The remaining near-miss is two
+#   placements: `dmd_act` over-ranked (PX 1st, truth 7th; top-pick cost 0.760 vs
+#   0.971) and `km_pix` under-ranked (PX 12th, truth 8th).
+#
+# **Takeaway:** the selector + trust dial survive non-Gaussian innovations and
+# the fully combined realistic world; seasonal worlds demand deseasonalized
+# inputs; under strong non-linearity PX remains a reliable screen with a
+# calibrated accuracy line, but near-tie ranking is unreliable.
 
 # %%
-print("Robustness rungs pending (seasonal / nonlinear / non-Gaussian in progress).")
-print("No numbers fabricated for those worlds; see notes/demo_notebook_plan.md §4.")
+# ===== APPENDIX — robustness scorecard (post-processing of committed results) ==
+# Loads results/litext_e4_agreement_<tag>.npy from the 2026-07-15/16 robustness
+# pipeline (out/orchestrate_robust.sh) and renders the scorecard + PX-vs-truth
+# scatters. No heavy compute; runs with RUN=False.
+from scipy.stats import spearmanr
+
+RES = os.path.join(ROOT, "results")
+ROBUST_TAGS = [
+    ("linskew",            "non-Gaussian (skewnorm)",  "PASS"),
+    ("finecadence",        "all combined",             "PASS"),
+    ("nlgauss",            "non-linear (alpha=0.5)",   "MISS (rank)"),
+    ("overlapseas_raw",    "seasonal, raw",            "MISS"),
+    ("overlapseas_deseas", "seasonal, deseasonalized", "near-miss"),
+]
+
+print(f"{'world':26s} {'PX Spearman':>12s} {'Pearson':>8s}  [bar >= 0.8]")
+robust = {}
+for tag, label, note in ROBUST_TAGS:
+    d = np.load(os.path.join(RES, f"litext_e4_agreement_{tag}.npy"),
+                allow_pickle=True).item()
+    robust[tag] = d
+    print(f"{label:26s} {d['spearman_px_pair']:+12.3f} "
+          f"{d['pearson_px_pair']:+8.3f}  {note}")
+
+fig, axes = plt.subplots(1, 5, figsize=(16, 3.4), sharey=True)
+for ax, (tag, label, note) in zip(axes, ROBUST_TAGS):
+    d = robust[tag]
+    names = [n for n in d["px"] if n in d["rows"]]
+    x = np.array([d["px"][n] for n in names])
+    y = np.array([d["rows"][n]["f1_pair"] for n in names])
+    ax.scatter(x, y, s=42, color="#4269D0", alpha=0.85, edgecolors="white",
+               linewidths=1.5, zorder=3)
+    for idx in {int(np.argmax(x)), int(np.argmax(y))}:  # label PX pick + true best
+        ax.annotate(names[idx], (x[idx], y[idx]), textcoords="offset points",
+                    xytext=(5, -9), fontsize=8, color="#555555")
+    ax.set_title(f"{label}\nSpearman {d['spearman_px_pair']:+.2f} · "
+                 f"Pearson {d['pearson_px_pair']:+.2f}", fontsize=9)
+    ax.set_xlabel("PX (no answer key)", fontsize=8)
+    ax.grid(True, linewidth=0.4, alpha=0.35)
+    ax.tick_params(labelsize=8)
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+axes[0].set_ylabel("truth-F1 (pair)", fontsize=9)
+fig.suptitle("Robustness rungs — PX vs. truth accuracy per candidate decomposition",
+             fontsize=11, y=1.06)
+fig.tight_layout()
+FIG = os.path.join(PLOTS, "robustness_scatter.png")
+fig.savefig(FIG, dpi=110, bbox_inches="tight")
+print("figure saved ->", FIG)  # display in Jupyter: Image(filename=FIG)
+
+# nlgauss near-tie diagnostic: rank signal is carried by the degenerate tail
+d = robust["nlgauss"]
+names = [n for n in d["px"] if n in d["rows"]]
+x = np.array([d["px"][n] for n in names])
+y = np.array([d["rows"][n]["f1_pair"] for n in names])
+keep = x > 0
+sp_live, _ = spearmanr(x[keep], y[keep])
+i_px, i_f1 = int(np.argmax(x)), int(np.argmax(y))
+print(f"\nnlgauss: Spearman excluding PX=0 degenerates = {sp_live:+.3f} "
+      f"(headline +0.624 leans on the easy tail)")
+print(f"  PX top pick {names[i_px]} F1={y[i_px]:.3f} vs true best {names[i_f1]} "
+      f"F1={y[i_f1]:.3f} -> top-pick cost {y[i_f1]-y[i_px]:.3f}")
 print("\n=== demo notebook defined (RUN=False: heavy pipeline steps gated) ===")
