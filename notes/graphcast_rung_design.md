@@ -201,6 +201,20 @@ geometry.** So we train our own:
    class works on this architecture family, though their number is not our
    baseline; our leakage metric on our model is the quantitative contribution.
 
+**Deseasonalization boundary (the SAE sees the seasons; the statistics never
+do):** the SAE trains on RAW activation vectors — samples are (timestep,
+mesh-node) 512-dim vectors, i.i.d.-shuffled, no time axis — because the
+diurnal/seasonal cycle features are content to *discover* (MacMillan's
+headline classes; deseasonalizing first would erase them). But every DERIVED
+time series (SAE-cluster mode series in G1, community series for PCMCI+) is
+deseasonalized + detrended before any CI test, like all other candidates
+(diurnal phase: raw F1 0.293 → deseas 0.825; seasonal rung: PX +0.132 →
++0.769). This includes the Ising grouping step: shared seasonality makes all
+same-season features co-fire and would artifactually merge communities into
+one block (a Block-D-like failure with a different cause) — regress the cycle
+out of continuous feature activations (or phase-condition the fit) BEFORE
+binarization.
+
 Optional appendix, clearly fenced: a straight replication of MacMillan on
 GraphCast proper (0.25°) as a standalone credibility exercise — no
 cross-model comparison to any G1 artifact. Only worth it if 0.25° activation
