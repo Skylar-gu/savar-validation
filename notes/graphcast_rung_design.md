@@ -21,6 +21,17 @@ bigger model newly justifies.
   Weights from the public GCS bucket. Fits the L40S (48 GB) with headroom.
   (Full 0.25° GraphCast is 16× the data and does not fit the local disk budget;
   small first, and the recipe is resolution-agnostic by construction.)
+- **Scope caveat (state in the paper):** results characterize
+  `graphcast_small`'s internals, not the 0.25° flagship's — siblings by
+  architecture and training recipe, but different networks. The mode-level
+  claims target synoptic/teleconnection scales (≫1°), where 1° is the right
+  level of description; the 0.25° extension is a defined follow-up rung
+  (streamed WB2 + larger instance), not a design change.
+- **Single-model coherence rule:** every quantitative artifact in the rung —
+  activations, SAE features, candidate Ŵs, both graphs, steering — comes from
+  ONE network (`graphcast_small`) and ONE data resolution (1° ERA5). Features
+  and graphs from different networks live in different latent spaces and are
+  never compared quantitatively (see §5).
 - **Compute:** the g6e.8xlarge (L40S + 32 vCPU). Teacher-forced extraction is
   ~22k forward passes (trivial); the dominant CPU cost is PCMCI+ over the
   window ensemble (the robustness rungs bounded this: an 8-mode, 24-realisation
@@ -165,22 +176,35 @@ causal graph with a trust readout is their stated open problem.
 
 SAEs are currently NOT in the validated pipeline (the litext rungs use
 varimax/kmeans/DMD/Leiden; `sae/` is legacy naming). GraphCast justifies
-re-opening them:
+re-opening them — but note the coherence constraint: **MacMillan & Ouellette
+trained their SAEs on GraphCast proper (0.25°). Their features live in that
+network's latent space and CANNOT be reused against `graphcast_small`'s modes
+or graphs — different weights, different mesh (M6 vs M5), different latent
+geometry.** So we train our own:
 
-1. **Replicate MacMillan & Ouellette** (TopK SAE, layer-8, teacher-forced
-   ERA5): recover cyclone/AR/sea-ice-like features. Cheap credibility anchor,
-   and their released recipe removes design risk.
-2. **SAE-cluster candidate for the G1 pool:** group SAE features (see retry #1
-   below) and build a Ŵ from cluster spatial signatures. The pool structure
-   means this bet is FREE — if the SAE candidate is bad, PX screens it (that
-   is what PX is for); if good, it wins and the SAE program gets its causal
-   handle.
-3. **Feature-level steering on GraphCast** (retry of Block F): scale individual
-   SAE features during teacher-forced steps; measure dose-response AND
-   cross-mode leakage. MacMillan already showed monotone hurricane-intensity
-   steering respecting physical balances — i.e., the experiment that failed on
-   our MeshGNN (leakage 0.81–0.94, "global amplitude knobs") already half-works
-   on the real model.
+1. **Port the MacMillan recipe to `graphcast_small`** (TopK SAE, layer-8
+   embeddings, teacher-forced 1° ERA5 — their released method, our model).
+   Qualitative check: do 1° analogs of their feature classes appear
+   (atmospheric rivers, sea-ice extent, diurnal/seasonal cycles, grid-locked)?
+   Fine-scale cyclone-core features may genuinely not exist at 1° — report
+   what does. This is method transfer, not replication; the credibility anchor
+   is that the recipe found rich features on a sibling network.
+2. **SAE-cluster candidate for the G1 pool** (from OUR small-model SAE): group
+   its features (retry #1 below) and build a Ŵ from cluster spatial
+   signatures. The pool structure makes this bet FREE — if the SAE candidate
+   is bad, PX screens it (that is what PX is for); if good, it wins and the
+   SAE program gets its causal handle.
+3. **Feature-level steering on `graphcast_small`** (retry of Block F): scale
+   individual features of OUR SAE during teacher-forced steps; measure
+   dose-response AND cross-mode leakage. MacMillan showed monotone
+   hurricane-intensity steering on GraphCast proper — evidence the experiment
+   class works on this architecture family, though their number is not our
+   baseline; our leakage metric on our model is the quantitative contribution.
+
+Optional appendix, clearly fenced: a straight replication of MacMillan on
+GraphCast proper (0.25°) as a standalone credibility exercise — no
+cross-model comparison to any G1 artifact. Only worth it if 0.25° activation
+extraction turns out cheap (single-step, no probe); otherwise skip.
 
 ---
 
