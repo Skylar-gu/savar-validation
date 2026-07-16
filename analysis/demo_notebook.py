@@ -955,14 +955,24 @@ else:
     print("fits accuracy ~= 1.48*PX + 0.13 (+/-0.13); the parent is the first rung.")
 
 # %%
-# --- VIZ: the trust-dial figure ----------------------------------------------
-# Rendered by analysis/e4_final_calibration.py -> results/plots/trust_dial.png.
+# --- VIZ: the trust-dial figure (v2, 2026-07-16) -------------------------------
+# Rendered by analysis/plot_trust_dial.py -> results/plots/trust_dial.png.
+# v2 adds the four robustness worlds as an OUT-OF-SAMPLE test of the Jul-8 dial,
+# then refits pooled (results/litext_e4_final_calibration_v2.npy).
 # In Jupyter, uncomment to display the saved figure:
 # from IPython.display import Image
 # Image(filename=os.path.join(PLOTS, "trust_dial.png"))
 print("trust-dial figure:", os.path.join(PLOTS, "trust_dial.png"))
-print("\nTAKEAWAY: from a forecaster we cannot check, PX (measured with NO answer key) "
-      "predicts recovery accuracy via one pooled line -- a calibrated trust dial.")
+print("""
+TAKEAWAY: from a forecaster we cannot check, PX (measured with NO answer key)
+predicts recovery accuracy. Out-of-sample on the 4 robustness worlds the
+RANKING transfers cleanly (Spearman +0.81, Pearson +0.93) but the ABSOLUTE
+calibration shifted: new points sit ~+0.14 F1 above the Jul-8 line (only 8/52
+inside its +/-0.13 band), so v2 refits pooled over 9 worlds:
+accuracy ~ 1.76*PX + 0.13 (Spearman +0.79, R2 0.72, residual +/-0.16).
+Caveat: the offset is confounded with the CI-test switch (old rungs ParCorr,
+new rungs RobustParCorr) -- quote the dial as rank-reliable with +/-0.16
+absolute error, not a universal constant.""")
 
 
 # %% [markdown]
