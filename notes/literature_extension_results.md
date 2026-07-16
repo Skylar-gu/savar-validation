@@ -842,3 +842,95 @@ program was built to produce. Remaining caveat: absolute calibration assumes a
 resolution-homogeneous candidate pool with live dyn channels (the R4 lesson);
 that precondition is itself unsupervised-detectable (pool resolution spread +
 dyn liveness).
+
+## R4b — pre-registered fair-pool scale rung (2026-07-09, "scale24pre"): +0.790, a hair under the bar
+
+Pre-registration: `notes/prereg_r4b_fairpool_scale.md` (commit b155752, BEFORE the
+run). Homogeneous 24-mode pool of 10 candidates; count-changing anchors
+(coarse4/fine16/merge01/split7) excluded a priori. Bar: PX Spearman ≥ 0.8.
+
+**Result: Spearman(PX, truth-F1 pair) = +0.790 (Pearson +0.975) — misses the
+pre-registered bar by 0.010.** Exact-lag Spearman +0.717. Reported as a miss;
+not re-run, not tuned. Context: the post-hoc homogeneous-pool diagnostic on R4
+had given +0.667, so the pre-registered fair pool *did* recover most of the gap
+from R4's +0.357 — the "heterogeneous pool, not scale" diagnosis holds — but at
+N=24 the selector lands just short of the same bar it clears at N=8 (+0.93 to
++0.95). Discovery side unchanged: Leiden N̂=24, 23/24 matched (0.966), varimax
+acts-path collapses (F1 ≈ 0.10) while vmax_pix stays strong (0.668).
+
+Honest reading: at 3× mode count the pool-crossed selector is *nearly*
+calibrated but noisier — with 10 candidates one adjacent rank swap costs ~0.02
+Spearman, so +0.790 vs 0.8 is within one swap. The Pearson +0.975 says the
+line itself is intact. Flagged, not spun.
+
+## Robustness matrix (2026-07-15/16): NG + combined PASS, NL rank-miss, seasonality requires deseasonalization
+
+The demo-notebook plan §4 matrix, run as four full rungs (splits → train → E1 →
+E4 + mechanism diagnostic per world) by a two-lane orchestrator
+(`out/orchestrate_robust.sh`: GPU training lane / CPU battery lane overlapped;
+~32.5 h wall-clock). All worlds are 8-mode 50-grid finecadence-family; CI test
+= RobustParCorr throughout (the new default). Results `results/litext_*_{nlgauss,
+linskew,overlapseas_raw,overlapseas_deseas,finecadence}.npy`.
+
+| mechanism | world | PX Spearman | Pearson | verdict |
+|---|---|---|---|---|
+| Non-Gaussianity (skewnorm innovations) | `_linskew` | **+0.909** | +0.946 | **PASS** |
+| All combined (realistic regime) | `_finecadence` | **+0.869** | +0.951 | **PASS** |
+| Non-linearity (bilinear, α=0.5) | `_nlgauss` | +0.624 | +0.972 | MISS (rank only) |
+| Seasonality, raw series | `_overlapseas_raw` | +0.132 | +0.333 | MISS |
+| Seasonality, deseasonalized | `_overlapseas_deseas` | +0.769 | +0.789 | near-miss |
+
+Same-Ŵ agreement stays weak everywhere (+0.18 to +0.42) — pool-crossing keeps
+carrying the signal. Dyn is live on all four worlds, so every number above is a
+real test, not an R6-style inapplicability.
+
+**Mechanism diagnostics:**
+- **Non-linearity CI ablation** (`pcmci/ci_test_ablation.py`, new): ParCorr ≡
+  RobustParCorr (Jaccard 1.000, F1 0.815 vs truth); CMIknn F1 0.957 — it drops 4
+  false-positive edges and keeps all-but-one true edge. So the linear CI test is
+  **edge-recall-preserving** under bilinear dynamics (the pre-registered
+  hypothesis), at a precision cost of ~4 spurious edges — and CMIknn costs
+  51,652 s vs 1 s, so RobustParCorr stays the default.
+- **Non-Gaussianity FP calibration**: RobustParCorr F1 0.923 vs ParCorr 0.889 on
+  the skewnorm world; on 200 cross-realisation null pairs both tests are
+  near-nominal (α=0.05 → observed 0.060–0.065). ParCorr's p-values are NOT badly
+  miscalibrated under skew — pass criterion met.
+
+**Reading the misses (per-candidate diagnostics):**
+- **`nlgauss` — screen, not ranker.** The mid-pool is 8 candidates within 0.017
+  of PX spanning 0.29 of truth-F1: in-cluster ranking is noise. Excluding the
+  two degenerate PX=0 candidates, Spearman falls to +0.382 — the headline +0.624
+  leans on the easy tail. But the top-pick cost is only **0.057 F1** (PX picks
+  shift5 at 0.826 vs best blur at 0.883), and Pearson +0.972 says the
+  calibration line is intact. Under strong non-linearity PX reliably *screens*
+  (kills coarse4/diag8/fine16) but is not a fine *ranker* among near-ties — the
+  E2 lesson recurring, now for PX.
+- **Seasonality — deseasonalization is REQUIRED preprocessing** (+0.132 raw →
+  +0.769 deseasonalized; `data_gen/deseason_realisations.py` new). The residual
+  near-miss is two placements: dmd_act over-ranked (PX 1st, truth 7th; top-pick
+  cost 0.760 vs 0.971) and km_pix under-ranked (12th vs 8th).
+
+## Trust dial v2 (2026-07-16): out-of-sample test — ranking transfers, absolute calibration is per-domain
+
+The four robustness worlds were never seen by the 2026-07-08 dial fit, so they
+are a genuine out-of-sample test (n=52 new candidate points;
+`analysis/plot_trust_dial.py`, `results/litext_e4_final_calibration_v2.npy`).
+
+- **Ranking transfers cleanly: Spearman +0.810, Pearson +0.926** on the unseen
+  points — the selector works out-of-sample.
+- **Absolute calibration does not: only 8/52 (15%) fall inside the old ±0.13
+  band.** The shift is systematic, +0.12 to +0.15 mean residual per world (the
+  old line *under*-predicts accuracy — the safe direction).
+- **Refit pooled over all 9 worlds (n=104): accuracy ≈ 1.76·PX + 0.13, Spearman
+  +0.790, R² 0.722, residual ±0.16.** On the robustness worlds alone the slope
+  is 2.58 (paper figure `results/plots/trust_dial_paper.pdf`).
+- **Confound flag:** the old rungs ran ParCorr, the new ones RobustParCorr — the
+  offset may partly be the CI-test switch, not the mechanisms. Disentangling
+  rerun (R1 overlap E4 under RobustParCorr, tag `_overlap02_rpc`) in progress;
+  result to be appended below.
+
+**Bottom line (supersedes the E4-final quote above): quote PX as a
+rank-reliable selector (out-of-sample Spearman +0.81) with per-domain absolute
+calibration ±0.16 F1 — not as a universal constant.** Preconditions, all
+unsupervised-detectable: resolution-homogeneous pool (R4), live dyn (R6),
+deseasonalized inputs (seasonal rung).
