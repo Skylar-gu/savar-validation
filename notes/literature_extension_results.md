@@ -934,3 +934,14 @@ rank-reliable selector (out-of-sample Spearman +0.81) with per-domain absolute
 calibration ±0.16 F1 — not as a universal constant.** Preconditions, all
 unsupervised-detectable: resolution-homogeneous pool (R4), live dyn (R6),
 deseasonalized inputs (seasonal rung).
+
+**Confound rerun verdict (2026-07-16, `_overlap02_rpc`): the CI test is NOT the
+offset.** R1-overlap E4 rerun identically under RobustParCorr: PX and truth-F1
+move in lockstep (mean +0.046 and +0.049), i.e. points slide ALONG the dial
+line, not above it — residual vs the old line goes −0.048 (ParCorr) → −0.067
+(RobustParCorr), vs the +0.136 the robustness worlds show. CI-test share of the
+offset ≈ −0.02 (nil). Selector unaffected: Spearman +0.946 → +0.908, still
+PASS. Conclusion: the +0.14 offset is a property of the robustness worlds
+(finecadence-family generator, different world family from the original rungs),
+which *strengthens* the per-domain-calibration framing: the CI-test choice
+doesn't move the dial, the data-generating domain does.
