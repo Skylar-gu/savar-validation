@@ -23,9 +23,31 @@
         to content-locked mechanisms, and the grid-lock-is-epiphenomenal result
         comes out of a single ablation-defined object (Sec.~\ref{sec:vpd}). To our
         knowledge this is the first application of the SPD family to a GNN.
+  \item \textbf{An answer-key-free selector for causal variables}
+        (Sec.~\ref{sec:selector}). Pool-crossed agreement between a read channel
+        (discovery through a candidate map) and a poke channel (impulse response
+        through the frozen model) ranks candidate feature sets with no ground
+        truth, at Spearman $+0.93$ to $+0.95$ on three out-of-sample rungs
+        ($+0.95$ in-sample), where same-map agreement reaches only $+0.38$. We
+        give the two structural reasons the naive statistic fails---shared-map
+        error and the read/write geometry asymmetry---and both carry beyond
+        SAVAR.
+  \item \textbf{A calibrated trust dial with an honest scope limit.} Observed
+        agreement maps to predicted graph accuracy; the ranking transfers
+        out-of-sample (Spearman $+0.81$ on four unseen worlds) while the absolute
+        calibration is per-domain to ${\pm}0.16$ F1. A dedicated rerun rules out
+        our own conditional-independence-test switch as the cause of the offset.
+  \item \textbf{Preconditions that are detectable without ground truth}: a
+        resolution-homogeneous candidate pool, a live perturbation channel, and
+        deseasonalized inputs. Seasonality breaks the recipe on raw series
+        ($+0.13$) and is repaired by preprocessing ($+0.77$), which matters
+        directly for GraphCast, whose published SAE features prominently include
+        the diurnal and seasonal cycles.
   \item An attribution discipline for negative results: the missing mode
-        specialization traces to the generator's dynamic homogeneity, and a
-        running experiment tests that explanation directly
+        specialization was traced to the generator's dynamic homogeneity, and the
+        experiment testing that explanation split---confirming it for the SAE
+        representation and refuting it for the parameter decomposition, which
+        relocates that failure from the data to VPD's objective
         (Sec.~\ref{sec:homog}).
 \end{enumerate}
 
@@ -38,14 +60,22 @@
   \item Fine-cadence generator; subsampling sweep; switch to PCMCI+ --- done.
   \item Heterogeneous-mesh GNN forecaster; per-mode SAEs on it --- done.
   \item VPD decomposition of the GNN's message-passing MLPs --- done.
-  \item Heterogeneous-dynamics experiment (specialization test) --- running.
+  \item Heterogeneous-dynamics experiment (specialization test) --- done; split
+        result (Sec.~\ref{sec:homog}).
+  \item Answer-key-free selector; pre-registered rungs for overlap, rollout
+        training, multivariate channels, and scale --- done
+        (Sec.~\ref{sec:selector}).
+  \item Mechanism-robustness matrix and trust-dial calibration --- done.
+  \item Scale rung at a fair pool: $+0.790$ against a bar of $0.8$. A larger
+        pre-registered pool at $N=24$ is the outstanding follow-up.
   \item LiNGAM-style orientation of contemporaneous edges --- not started.
-  \item Overlapping-mode variant --- not started.
   \item GraphCast: activation collection on teacher-forced trajectories; SAE
-        training, or reuse of the setup from~\cite{macmillan2025}.
+        training on the target model itself.
   \item GraphCast: feature-stability check; unsupervised feature grouping
-        (Ising/Leiden) before discovery.
-  \item GraphCast: causal discovery on features; physical-plausibility and
+        (Ising/Leiden) before discovery; deseasonalization of all derived series
+        before conditional-independence testing.
+  \item GraphCast: causal discovery on features; selector and trust dial
+        recalibrated in-domain; physical-plausibility and
         interventional-consistency evaluation.
   \item Write-up.
 \end{enumerate}

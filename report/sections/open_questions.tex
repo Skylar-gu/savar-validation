@@ -14,18 +14,36 @@ interpretability framing (``what did the model learn?'') legitimately targets th
 model's structure, but every claim should say which of the two it is about.
 
 \paragraph{No ground truth in GraphCast.} SAVAR lets us score recovered graphs;
-GraphCast never will. Validation there has to lean on known physical relationships
-(the diurnal cycle driving near-surface temperature, say) and on interventional
-consistency in the style of~\cite{macmillan2025}: an edge $A \to B$ produced by
-discovery should survive an actual intervention on $A$.
+GraphCast never will. Section~\ref{sec:selector} is our answer---a selector and a
+trust dial built entirely from label-free quantities---but it leaves a residue.
+The dial's ranking transfers out-of-sample; its absolute calibration is
+per-domain, and GraphCast is a domain we cannot calibrate in, since calibration
+needs exactly the ground truth we lack. What transfers is therefore the ordering
+of candidates and the qualitative reading of the agreement gap, not a numeric
+accuracy with an error bar. Validation there still has to lean on known physical
+relationships (the diurnal cycle driving near-surface temperature, say) and on
+interventional consistency in the style of~\cite{macmillan2025}: an edge
+$A \to B$ produced by discovery should survive an actual intervention on $A$.
+
+\paragraph{Selection preconditions.} Three conditions must hold for the selector
+to be applicable, and each was learned from a rung that violated it: the candidate
+pool must be resolution-homogeneous, the perturbation channel must be live, and
+the series must be deseasonalized. All three are detectable without ground truth,
+which is what makes them usable. What we have not established is whether the list
+is complete---each was found by a rung failing, so the natural expectation is that
+further rungs find further conditions.
 
 \paragraph{Polysemanticity.} In every SAVAR variant tested, the best-aligned
 features remain polysemantic, and a polysemantic feature is an ambiguous causal
-variable. Possible responses include stricter monosemanticity criteria, per-region
-SAEs, or grouping features before discovery. The heterogeneous-dynamics experiment
-(Sec.~\ref{sec:homog}) will show whether specialization appears once the task
-rewards it; if it does not, the grouping problem moves to the center of the
-project.
+variable. The heterogeneous-dynamics experiment (Sec.~\ref{sec:homog}) has now
+run, and it does not rescue the situation: giving the modes a $23\times$ timescale
+spread improves feature--mode alignment measurably but leaves feature uniqueness
+near zero, so a mode's best feature still correlates almost as strongly with some
+other mode. Specialization appears when the task rewards it, but not nearly enough
+to make features clean causal variables. The grouping problem is accordingly now
+central rather than contingent, which is why the pipeline treats the choice of
+aggregation---not the individual feature---as the object to select over
+(Sec.~\ref{sec:selector}).
 
 \paragraph{Orientation of contemporaneous edges.} The aliasing risk itself is now
 quantified: Sec.~\ref{sec:subsample} shows plain PCMCI collapsing under
@@ -46,10 +64,14 @@ where, never on how much. GraphCast at 6 hours is far above climatology, so this
 is a SAVAR-specific worry for now, but it will return at long lead times as
 rollout skill decays.
 
-\paragraph{Overlapping modes.} Every SAVAR variant so far uses spatially disjoint
-mode maps, so the pixel-to-mode projection is clean. Overlapping modes (closer
-centers, wider spatial profiles) would degrade the projection and dilute the SAE
-features. The knob exists in the generator and has not been turned.
+\paragraph{Overlapping modes.} This knob has now been turned
+(Sec.~\ref{sec:selector}, rung R1): footprints widened until the maximum pairwise
+row cosine is exactly $0.20$, with the dynamics held byte-identical so only the
+emission changes. The effect is sharply asymmetric. Discovery from the model's
+internals collapses (graph F1 $0.819 \to 0.185$) while discovery from pixels is
+untouched ($0.938$), and the selector ranks the pool correctly regardless. Higher
+overlap has not been tested, and $0.20$ is mild next to what real atmospheric
+features would show.
 
 \paragraph{Method disagreement on GraphCast.} If PCMCI+, TSCI, and DYNOTEARS
 disagree on GraphCast features, some adjudication rule is needed, and it should be

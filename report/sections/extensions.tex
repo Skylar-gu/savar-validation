@@ -202,6 +202,35 @@ dynamics and specialization should appear. A modified generator
 (\texttt{generate\_hetdynamics.py}) widens the self-coupling range to
 $[0.15, 0.92]$, a ${\sim}23\times$ spread in autocorrelation timescale, with an
 equal-variance control to separate timescale heterogeneity from amplitude. The
-three-way comparison (baseline, heterogeneous dynamics, equal-variance control)
-through the full GNN and SAE pipeline is running at the time of writing.
-\todo{Add heterogeneous-dynamics results when the runs complete.}
+three-way comparison has since been run through the full pipeline, and it splits:
+the prediction holds on the representation and fails on the decomposition.
+
+On the SAE side the prediction is confirmed, modestly. Hungarian-matched MCC
+between features and modes improves monotonically with dynamic heterogeneity
+($0.34$ baseline, $0.42$ heterogeneous, $0.46$ equal-variance control), and
+per-mode alignment is monotone in the self-coupling coefficient (matched $|r|$
+rising from $0.12$ for the fastest mode to $0.63$ for the slowest). Seed variance
+is negligible ($\pm 0.004$ MCC). Timescale heterogeneity does make features more
+mode-specific, and slow-mode content is what the network makes decodable. The
+effect is real but small, and uniqueness stays near zero throughout: even a mode's
+best-matched feature correlates almost as strongly with some other mode.
+
+On the VPD side the prediction fails outright. Rerunning the decomposition on the
+heterogeneous checkpoint, with a loss and gate configuration byte-identical to the
+run of Sec.~\ref{sec:vpd}, leaves every decomposed matrix at a participation ratio
+of $1.08$--$1.54$ out of $64$ components, against a pre-registered bar of $>3$;
+layer-0 blob-usage spread is identical to the homogeneous baseline. A secondary
+configuration ($4\times$ fewer components, $30\times$ stronger minimality
+pressure) does not move it either: participation ratio $1.01$--$1.23$. In the last
+message-passing MLP the components do concentrate jointly on the slow-mode blobs,
+but they do not differentiate \emph{from each other}---a participation ratio of
+$1.01$ is literally one shared pattern wearing sixteen labels.
+
+The honest reading is that the task-homogeneity explanation is confirmed for the
+representation and disconfirmed for the decomposition. The representation
+differentiates when the data give it reason to; VPD's minimality objective
+collapses to a single shared mechanism on this GNN regardless. That relocates the
+problem from the data to the method---candidate fixes are per-layer component
+budgets, a penalty on pairwise gate correlation, or stochastic masking in place of
+the frequency-minimality term---and it is a caution for reading any
+parameter-decomposition result on a graph network as evidence about the data.

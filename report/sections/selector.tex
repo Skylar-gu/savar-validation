@@ -1,0 +1,301 @@
+\section{Choosing a Mode Map Without an Answer Key}
+\label{sec:selector}
+
+Everything so far was scored against ground truth. GraphCast offers none, and the
+gap this opens is not a detail of evaluation but a hole in the middle of the
+method. The pipeline of Sec.~\ref{sec:approach} begins by choosing a set of
+variables---an aggregation map from the model's high-dimensional state to a
+handful of candidate features---and that choice dominates everything downstream.
+On SAVAR we can simply try many maps and keep the one with the best graph. On
+GraphCast we cannot, so a recipe that needs the answer key to pick its own
+variables is not a recipe at all.
+
+This section builds a selector that ranks candidate maps using only quantities
+computable without ground truth, and calibrates how much its verdict can be
+trusted. It is the part of the project that has moved most since the results
+above, and the part the GraphCast application depends on.
+
+\subsection{The candidate pool and the two channels}
+\label{sec:px}
+
+The construction needs a pool of candidate aggregation maps spanning a wide
+quality range, and two independent ways of reading a causal graph through each.
+
+The pool (\texttt{sae/discover\_modes.py}) holds thirteen candidates: unsupervised
+discovery operators (varimax-PCA, $k$-means and DMD clustering, each run on raw
+pixels and on model activations), the oracle map, and deliberately corrupted
+variants---blurred, shifted, merged, split, diagonal---that manufacture a
+controlled quality axis. Scored against truth the pool spans F1 $0.00$ to $0.89$,
+which is what a selector test requires.
+
+Two channels then read a graph through each candidate map $\hat W$. The
+\emph{int} channel pools the observation field through $\hat W$ and runs PCMCI+
+over the resulting series, giving $\hat G_{\text{int}}$: this is discovery by
+\emph{reading} correlations. The \emph{dyn} channel injects impulses into the
+frozen forecaster along $\mathrm{pinv}(\hat W)$, reads the teacher-forced response
+back out on the rows of $\hat W$, and thresholds against a pixel-permutation null,
+giving $\hat G_{\text{dyn}}$: discovery by \emph{poking} the model. Neither uses
+the true graph, the true modes, or the true footprints anywhere.
+
+An earlier attempt at unsupervised selection scored candidates by the internal
+consistency of a single channel (agreement between aggregate-level and
+pixel-level independence verdicts). It reached Spearman $+0.52$ against true
+quality and failed for a diagnosable reason: a map that destroys all signal has no
+dependencies at either level and is therefore vacuously consistent. Consistency is
+a trustworthy \emph{screen}---its zeros always mean a dead map---but not a
+\emph{ranker}. That failure is what motivated crossing two channels instead.
+
+\subsection{Same-map agreement fails, in two informative ways}
+
+The natural two-channel statistic is the agreement between the two graphs read
+through the \emph{same} map, $F_1(\hat G_{\text{int}}(A), \hat G_{\text{dyn}}(A))$.
+It does not work: Spearman $+0.375$ against true quality, far below the
+pre-registered bar of $0.8$. Table~\ref{tab:samew} shows why. The two failures are
+structural, and both carry to GraphCast.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Candidate & True F1 & Same-$\hat W$ agreement & Pool-crossed (PX) \\
+\midrule
+blur      & 0.918 & 0.556 & 0.453 \\
+oracle    & 0.879 & 0.621 & 0.447 \\
+shift5    & 0.878 & \textbf{0.154} & 0.490 \\
+vmax\_act & 0.835 & 0.298 & 0.424 \\
+dmd\_act  & 0.632 & 0.118 & 0.351 \\
+coarse4   & 0.230 & \textbf{0.727} & 0.149 \\
+diag8     & 0.000 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Selected candidates from the parent pool ($13$ total). Same-$\hat W$
+agreement is maximized by the worst usable map (\texttt{coarse4}) and minimized by
+one of the best (\texttt{shift5}); pool-crossing repairs both.}
+\label{tab:samew}
+\end{table}
+
+First, \textbf{merged maps self-agree on the wrong graph}. The candidate
+\texttt{coarse4}, which merges mode pairs and recovers almost nothing
+(true F1 $0.230$), attains the pool's \emph{highest} same-map agreement
+($0.727$). Both channels inherit the same marginalization from the shared $\hat W$
+and therefore make the same mistake in the same place. Agreement measures
+consistency of error, not correctness, whenever the error is shared.
+
+Second, \textbf{the write channel is geometry-sensitive where the read channel is
+not}. The candidate \texttt{shift5} has footprints in the wrong locations but
+behaviourally coherent pooled series; it reads a nearly correct graph
+(true F1 $0.878$) while its dyn channel returns almost nothing (agreement
+$0.154$). Reading through $\hat W$ needs only that the pooled series be
+behaviourally coherent; \emph{writing} through $\mathrm{pinv}(\hat W)$ needs the
+injected perturbation to land on the true supports. This asymmetry is worth
+stating on its own: perturbation-based validation implicitly certifies footprint
+\emph{geometry}, not just behaviour, and a map can pass one test while failing the
+other.
+
+\subsection{Pool-crossed agreement}
+
+Both failures come from the two channels sharing a map. Crossing the pool removes
+the shared term. Define
+\[
+  \mathrm{PX}(A) \;=\; \frac{1}{|\mathcal{P}|-1}\sum_{B \neq A}
+  F_1\!\left(\hat G_{\text{int}}(A),\, \hat G_{\text{dyn}}(B)\right),
+\]
+the mean agreement between candidate $A$'s read graph and every \emph{other}
+candidate's poke graph. The dyn pool acts as a $\hat W$-independent reference, so
+per-map channel error averages out while genuine map quality survives. The
+direction matters: the int channel carries the quality signal, and the transposed
+statistic (each candidate's dyn graph against the int pool) scores only $+0.288$.
+
+On the parent rung PX reaches Spearman $+0.950$ (Pearson $+0.99$) against true
+graph quality, against $+0.375$ for same-map agreement. Good maps sit at
+$0.40$--$0.49$, merged or weak maps at $\le 0.17$, dead maps at exactly $0$---a
+usable selector with a clean gap.
+
+One caveat belongs here rather than in a footnote: the aggregation rule
+(mean over the pool) was fixed \emph{after} the two confounds above were
+diagnosed, on $13$ candidates. The parent number is therefore in-sample, and the
+rungs below exist to test it out-of-sample.
+
+\subsection{A scoring convention that had to be corrected}
+
+Diagnosing \texttt{shift5} exposed an error in the ground truth itself, not in the
+selector. Under the original convention---matching discovered variables to true
+modes by footprint cosine---\texttt{shift5} scored F1 $0.000$. But its pooled
+series correlate $0.979$ with the true modes; matching variables to modes by
+series correlation instead gives F1 $0.835$. The map was good and the score was
+wrong. The same correction lifts \texttt{dmd\_act} from $0.177$ to $0.553$.
+
+All scoring in this section therefore uses behaviour-based matching. The
+methodological point generalizes beyond SAVAR: \emph{footprint geometry is the
+wrong success criterion for an aggregation map; behavioural coherence of the
+pooled series is the right one}. On GraphCast, where features have no
+ground-truth spatial support to be compared against, only the behavioural
+criterion is available at all.
+
+\subsection{Out-of-sample rungs}
+
+Each rung in Table~\ref{tab:rungs} changes one property of the world or the
+forecaster, retrains where needed, and reruns the battery unchanged. The rule was
+pre-registered from the parent's saved battery and applied verbatim, with no
+tuning; the bar is Spearman $\ge 0.8$.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llcc}
+\toprule
+Rung & What changes & PX Spearman & Verdict \\
+\midrule
+parent & --- (in-sample reference)            & $+0.950$ & --- \\
+R1 & overlapping footprints (max cosine $0.20$) & $+0.946$ & \textbf{pass} \\
+R3 & $C=2$ channels with cross-channel edges    & $+0.943$ & \textbf{pass} \\
+R5 & rollout-trained forecaster (BPTT, horizons 1--8) & $+0.934$ & \textbf{pass} \\
+R4b & $N=24$ modes, $N$ unknown a priori        & $+0.790$ & miss \\
+\bottomrule
+\end{tabular}
+\caption{Pool-crossed selector across pre-registered rungs. Each is a full
+generate--train--discover--calibrate chain; the dyn channel was verified live in
+every one, so each number is a real test rather than an inapplicable channel.}
+\label{tab:rungs}
+\end{table}
+
+The three passes matter for different reasons. \textbf{R1} removes the
+disjoint-footprint assumption that every earlier SAVAR variant relied on, and it
+is the sharpest test of the two-channel idea because overlap degrades the
+internals channel specifically: discovery from activations collapses (\texttt{vmax\_act}
+graph F1 $0.819 \to 0.185$) while the pixel side stays healthy ($0.938$). The
+selector nonetheless ranks the pool correctly. \textbf{R5} fine-tunes the
+forecaster on multi-step rollout, which is GraphCast's actual training curriculum;
+it measurably moved the model's internals (\texttt{vmax\_act} truth-F1
+$0.485 \to 0.556$) while leaving the pixel side identical, and the selector
+survived the shift. \textbf{R3} adds coupled channels and cross-channel edges, and
+passes even though its activation-side discovery is degenerate---the multivariate
+GNN carries one hidden vector per \emph{spatial} node, so co-located channels
+receive identical pooled activations. PX works there because it crosses the clean
+pixel-side read channel against the live poke channel.
+
+\textbf{R4b} is the honest miss. Tripling the mode count to $N=24$ with $N$
+unknown, on a pre-registered resolution-homogeneous pool of ten candidates, PX
+reaches $+0.790$ and misses its bar by $0.010$. It is reported as a miss and was
+not re-run. Two things temper it. The Pearson correlation is $+0.975$, so the
+calibration line is intact and only the ranking is noisy---with ten candidates a
+single adjacent swap costs about $0.02$ Spearman. And the discovery side scaled
+cleanly: unknown-$N$ community detection recovered $\hat N = 24$ and matched
+$23/24$ modes at cosine $0.966$, while the fixed-rank varimax operators that
+worked at $N=8$ collapsed entirely. That contrast is itself a result for the
+GraphCast setting, where the number of features is large and not known in advance.
+
+\subsection{Mechanism robustness}
+
+A separate matrix (Table~\ref{tab:robust}) stresses the selector against the
+realism mechanisms of the generator---non-Gaussian innovations, non-linear
+dynamics, seasonality, and all of them combined---each as a full rung.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llcc}
+\toprule
+Mechanism & PX Spearman & Pearson & Verdict \\
+\midrule
+Non-Gaussian innovations (skew-normal) & $+0.909$ & $+0.946$ & \textbf{pass} \\
+All mechanisms combined                & $+0.869$ & $+0.951$ & \textbf{pass} \\
+Non-linearity (bilinear, $\alpha = 0.5$) & $+0.624$ & $+0.972$ & rank miss \\
+Seasonality, raw series                & $+0.132$ & $+0.333$ & miss \\
+Seasonality, deseasonalized            & $+0.769$ & $+0.789$ & near miss \\
+\bottomrule
+\end{tabular}
+\caption{Selector under generator realism mechanisms. Same-$\hat W$ agreement
+stays weak throughout ($+0.18$ to $+0.42$), so pool-crossing continues to carry
+the signal.}
+\label{tab:robust}
+\end{table}
+
+The combined world passing at $+0.869$ is the headline: with seasonality,
+saturating and bilinear non-linearity, and skewed innovations all active at once,
+the selector still ranks the pool. The two misses are more useful than the passes.
+
+Under strong non-linearity PX becomes a screen rather than a ranker. It reliably
+kills the dead maps, but eight candidates sit within $0.017$ of each other in PX
+while spanning $0.29$ of true F1, and ranking inside that cluster is noise
+(excluding two degenerate candidates the Spearman falls to $+0.382$). What
+survives is the decision that actually matters: the top-pick costs only $0.057$ F1
+relative to the best available map, and Pearson $+0.972$ says the calibration line
+is undamaged. A related check confirms the linear conditional-independence test is
+not the problem---under bilinear dynamics ParCorr is edge-recall-preserving, at a
+cost of about four spurious edges, while a nonparametric test buys F1 $0.815 \to
+0.957$ for a $50{,}000\times$ increase in compute.
+
+Seasonality is the one mechanism that breaks the recipe outright on raw series
+($+0.132$) and is repaired by preprocessing ($+0.769$). Shared periodic forcing
+induces dependence between co-periodic modes that the conditional-independence
+tests read as causal structure. \textbf{Deseasonalization is therefore a required
+preprocessing step, not an option}---a concrete and slightly uncomfortable
+finding for GraphCast, whose most prominent published SAE features include the
+diurnal and seasonal cycles themselves~\cite{macmillan2025}.
+
+\subsection{The trust dial and its per-domain calibration}
+\label{sec:dial}
+
+Ranking candidates is half of what is needed. The other half is turning an
+observed PX into a predicted accuracy with an error bar---a dial that says how
+much to believe a graph recovered from a model with no answer key.
+
+Pooling all candidate points across the original five rungs ($n=52$) gives
+\[
+  \text{accuracy} \;\approx\; 1.48 \cdot \mathrm{PX} + 0.13,
+  \qquad \text{Spearman } +0.905,\;\; R^2 = 0.797,\;\;
+  \text{residual s.d.\ } 0.131 .
+\]
+The four mechanism worlds above were generated after this fit and never entered
+it, so they constitute a genuine out-of-sample test ($n=52$ new points). The
+result splits cleanly, and the split is the main finding of this subsection.
+
+\emph{Ranking transfers}: Spearman $+0.810$, Pearson $+0.926$ on the unseen
+points. \emph{Absolute calibration does not}: only $8$ of $52$ fall inside the old
+$\pm 0.13$ band, with a systematic per-world offset of $+0.12$ to $+0.15$---the
+old line \emph{under}-predicts accuracy, which is at least the safe direction. A
+refit pooled over all nine worlds ($n=104$) gives
+$\text{accuracy} \approx 1.76 \cdot \mathrm{PX} + 0.13$ with residual $\pm 0.16$.
+
+The obvious suspect for the offset was a confound in our own procedure: the later
+worlds switched conditional-independence test, so the shift might have been ours
+rather than the world's. Rerunning R1 identically under the new test settles it.
+PX and true accuracy move together (mean $+0.046$ and $+0.049$), which slides
+points \emph{along} the calibration line rather than above it; the residual goes
+from $-0.048$ to $-0.067$, against the $+0.136$ the mechanism worlds show. The
+test choice contributes essentially nothing. The offset is a property of the
+data-generating domain, which strengthens rather than weakens the conclusion: what
+must be recalibrated per domain is the intercept, not the instrument.
+
+The resulting claim, stated at the strength the evidence supports: \textbf{PX is a
+rank-reliable selector (out-of-sample Spearman $+0.81$) whose absolute
+accuracy calibration is per-domain, to about $\pm 0.16$ F1}. It is not a universal
+constant, and quoting it as one would be the easiest way to oversell this work.
+
+Three preconditions emerged from the rungs, and all three are detectable without
+ground truth---which is what makes them usable rather than merely known. The
+candidate pool must be resolution-homogeneous (the R4 lesson: crossing graphs of
+different sizes muddies the pairwise F1, and pool resolution spread is directly
+measurable). The dyn channel must be live (an atmosphere-regime rung produced a
+dead poke channel, which makes the selector inapplicable rather than wrong; the
+number of detected dynamical edges reveals this immediately). And the input series
+must be deseasonalized.
+
+\subsection{A by-product: disagreement localizes model deficiencies}
+
+The two channels were built to be crossed, but their \emph{disagreements} turn out
+to be informative on their own. On maps whose poke channel is live, the true edges
+that appear in the read graph but not in the poke graph are almost exactly the
+couplings the forecaster failed to internalize: three specific edges, $15/16$
+detections, with no non-ground-truth disagreements. Pooled over all good maps
+including those with handicapped poke channels, $62\%$ of disagreements localize a
+genuine model deficiency against a $25\%$ base rate.
+
+``In the graph you read but not the graph you poke'' is thus a candidate
+model-evaluation product in its own right: it points at where an emulator has
+learned the correlational structure of a coupling without implementing the
+mechanism. It survives losing the oracle map, so it is available in the GraphCast
+setting, where it would name the atmospheric couplings the model predicts through
+but does not implement.

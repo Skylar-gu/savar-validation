@@ -40,7 +40,10 @@ interventions to systematic \emph{causal discovery} over the graph of features;
 (ii) decompose the forecaster's parameters into mechanisms with ablation-defined
 causal importance (VPD). Both validated on SAVAR, a synthetic system with a known
 ground-truth causal graph, including under temporal subsampling/aliasing and mesh
-heterogeneity.}
+heterogeneity. Third and most transferable: an answer-key-free selector
+(pool-crossed agreement between a read channel and a poke channel) that ranks
+candidate feature sets without ground truth, validated out-of-sample across nine
+generated worlds and calibrated into a trust dial with a per-domain error bar.}
 \end{abstract}
 
 \input{sections/intro}
@@ -48,6 +51,7 @@ heterogeneity.}
 \input{sections/approach}
 \input{sections/savar_results}
 \input{sections/extensions}
+\input{sections/selector}
 \input{sections/open_questions}
 \input{sections/contributions}
 

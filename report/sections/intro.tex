@@ -37,6 +37,21 @@ validated on GraphCast itself, where no ground-truth feature graph exists, so we
 validate both on SAVAR, a synthetic spatiotemporal system whose causal graph is
 known by construction (Secs.~\ref{sec:savar} and~\ref{sec:ext}).
 
+That last sentence names a problem larger than validation. Both routes begin by
+choosing variables---an aggregation of the model's state into a manageable feature
+set---and on SAVAR we can pick that aggregation by trying many and keeping
+whichever yields the best graph. On GraphCast we cannot, and a method that needs
+the answer key to choose its own variables does not transfer. Much of the work
+reported here is therefore aimed at a third question: can a candidate feature set
+be ranked, and the accuracy of the graph built on it be predicted, using only
+quantities computable without ground truth? Section~\ref{sec:selector} answers
+yes, by crossing two independent readings of the model---one that \emph{reads}
+correlations through a candidate map and one that \emph{pokes} the frozen
+forecaster through it---and shows the resulting selector holds up across
+overlapping features, rollout-trained forecasters, coupled channels, and the
+generator's realism mechanisms, while naming the conditions under which it does
+not.
+
 \subsection{Relation to prior work}
 
 MacMillan and Ouellette~\cite{macmillan2025} trained SAEs on GraphCast activations
