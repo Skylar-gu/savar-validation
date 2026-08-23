@@ -29,3 +29,7 @@ __pycache__/
 .claude/
 .vscode/
 .DS_Store
+sae_data_allknobs/
+checkpoints_allknobs/
+logs_allknobs/
+logs_allknobs_*.log
