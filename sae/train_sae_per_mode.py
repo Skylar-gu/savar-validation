@@ -37,11 +37,14 @@ from pathlib import Path
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--dy005", action="store_true")
 _ap.add_argument("--diurnal", action="store_true")
+_ap.add_argument("--allknobs", action="store_true")
 _ap.add_argument("--deseason", action="store_true",
                  help="Use ensemble-mean-deseasonalized activations (sae_data_*_deseason/)")
 _args = _ap.parse_args()
 
-if _args.diurnal:
+if _args.allknobs:
+    DATA_DIR = Path("sae_data_allknobs")
+elif _args.diurnal:
     DATA_DIR = Path("sae_data_diurnal")
 elif _args.dy005:
     DATA_DIR = Path("sae_data_dy005")

@@ -245,6 +245,10 @@ if __name__ == "__main__":
                      help="Train on data/splits_diurnal → checkpoints_diurnal/")
     _ap.add_argument("--dy005", action="store_true",
                      help="Train on data/splits_dy005 → checkpoints_dy005/")
+    _ap.add_argument("--allknobs", action="store_true",
+                     help="Train on data/splits_allknobs → checkpoints_allknobs/")
+    _ap.add_argument("--epochs", type=int, default=None,
+                     help="Override EPOCHS (cosine schedule length follows)")
     _a = _ap.parse_args()
     if _a.diurnal:
         SPLIT_DIR = os.path.join("data", "splits_diurnal")
@@ -252,5 +256,10 @@ if __name__ == "__main__":
     elif _a.dy005:
         SPLIT_DIR = os.path.join("data", "splits_dy005")
         CKPT_DIR  = "checkpoints_dy005"
+    elif _a.allknobs:
+        SPLIT_DIR = os.path.join("data", "splits_allknobs")
+        CKPT_DIR  = "checkpoints_allknobs"
+    if _a.epochs is not None:
+        EPOCHS = _a.epochs
     os.makedirs(CKPT_DIR, exist_ok=True)
     main()

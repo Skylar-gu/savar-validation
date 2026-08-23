@@ -34,11 +34,14 @@ from pathlib import Path
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--dy005", action="store_true")
 _ap.add_argument("--diurnal", action="store_true")
+_ap.add_argument("--allknobs", action="store_true")
 _ap.add_argument("--deseason", action="store_true",
                  help="Use ensemble-mean-deseasonalized activations (sae_data_*_deseason/)")
 _args = _ap.parse_args()
 
-if _args.diurnal:
+if _args.allknobs:
+    DATA_DIR = Path("sae_data_allknobs")
+elif _args.diurnal:
     DATA_DIR = Path("sae_data_diurnal")
 elif _args.dy005:
     DATA_DIR = Path("sae_data_dy005")
@@ -60,7 +63,10 @@ _CEILINGS_DY1   = [0.489, 0.575, 0.479, 0.589, 0.450, 0.358, 0.584, 0.465]
 _CEILINGS_DY005 = [0.490, 0.579, 0.477, 0.589, 0.450, 0.363, 0.584, 0.468]
 # Diurnal ceilings not yet measured; reuse dy005 (same D_y) as a rough reference.
 # The 'Frac' column is informational only — alignment pass/fail uses THRESH_ALIGN.
-if _args.diurnal or _args.dy005:
+if _args.allknobs:
+    # Measured on this dataset by sae/measure_ceilings.py (out-of-fold ridge).
+    CEILINGS = [float(c) for c in np.load(DATA_DIR / "ceilings.npy")]
+elif _args.diurnal or _args.dy005:
     CEILINGS = _CEILINGS_DY005
 else:
     CEILINGS = _CEILINGS_DY1
