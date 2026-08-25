@@ -1,0 +1,39 @@
+# GNN ladder trueZ,R0-R3   n_real=100  tau_max=6  |gt|=12
+  acts (100, 8, 2397, 256)  T_eff=2397
+
+[trueZ] ceiling: PCMCI on true Z, same protocol
+  trueZ  F1=0.8586+-0.059  P=0.7582  R=0.9983  TP/FP/FN=12.0/4.1/0.0  matched=8/8  [5s]  true latent series (T=2400)
+
+[encode] per-mode SAEs
+  oracle best_feat = [499, 141, 34, 259, 14, 497, 315, 321]
+  oracle sign      = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+[R0] replication: per-mode SAE + oracle feature + oracle sign
+    sparsity[R0]: zero-frac 0.691 (range 0.619-0.760)   co-fire 244/2397 = n_eff/T 0.102
+  R0     F1=0.6340+-0.082  P=0.5040  R=0.8650  TP/FP/FN=10.4/10.6/1.6  matched=8/8  [10s]  oracle: pooling+N+per-mode SAE+feature+sign |r|vsZ=[0.11, 0.26, 0.34, 0.34, 0.41, 0.54, 0.54, 0.53]
+
+[R2] drop oracle FEATURE SELECTION
+    sparsity[R2]: zero-frac 0.584 (range 0.506-0.713)   co-fire 451/2397 = n_eff/T 0.188
+  R2     F1=0.2017+-0.067  P=0.1974  R=0.2108  TP/FP/FN=2.5/10.6/9.5  matched=8/8  [11s]  rank=variance picks=[499, 226, 218, 230, 14, 497, 23, 125] |r|vsZ=[0.11, 0.2, 0.21, 0.09, 0.41, 0.54, 0.1, 0.53]
+
+[encode] MIXED SAE (sae_mixed.pt) — one dictionary, no mode labels
+  live features (nz>=2%): 338/512
+
+[R3a] drop oracle PER-MODE DICTIONARY (mixed SAE, argmax-var per stream)
+    sparsity[R3a]: zero-frac 0.528 (range 0.281-0.661)   co-fire 552/2397 = n_eff/T 0.230
+  R3a    F1=0.1972+-0.062  P=0.1703  R=0.2383  TP/FP/FN=2.9/14.2/9.1  matched=8/8  [10s]  picks=[72, 495, 316, 495, 216, 216, 316, 216] distinct=4 |r|vsZ=[0.11, 0.25, 0.26, 0.24, 0.46, 0.58, 0.26, 0.61]
+
+[R3b] drop oracle N + MODE PARTITION  <<< GRAPHCAST-MATCHED >>>
+    sparsity[R3b]: zero-frac 0.073 (range 0.000-0.388)   co-fire 2057/2397 = n_eff/T 0.858
+  rank=variance: N_hat=12 chosen=[495, 316, 396, 216, 143, 242, 499, 200, 72, 249, 401, 406]
+    MAP-R best |r| per discovered var: [0.257, 0.254, 0.274, 0.322, 0.277, 0.184, 0.347, 0.084, 0.233, 0.287, 0.245, 0.248]
+    matched 7/8 true modes: {0: 3, 1: 2, 2: 4, 3: 5, 4: 6, 6: 7, 11: 1}
+  R3b    F1=0.0029+-0.016  P=0.0034  R=0.0025  TP/FP/FN=0.0/8.5/12.0  matched=7/8  [108s]  rank=variance N_hat=12 matched=7/8
+
+==========================================================================
+rung              F1       P       R  matched
+trueZ         0.8586  0.7582  0.9983      8/8
+R0            0.6340  0.5040  0.8650      8/8
+R2            0.2017  0.1974  0.2108      8/8
+R3a           0.1972  0.1703  0.2383      8/8
+R3b           0.0029  0.0034  0.0025      7/8

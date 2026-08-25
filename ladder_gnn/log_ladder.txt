@@ -1,0 +1,57 @@
+# GNN ladder trueZ,R0-R3   n_real=100  tau_max=6  |gt|=12
+  acts (100, 8, 2397, 256)  T_eff=2397
+
+[trueZ] ceiling: PCMCI on true Z, same protocol
+  trueZ  F1=0.6157+-0.065  P=0.4480  R=1.0000  TP/FP/FN=12.0/15.4/0.0  matched=8/8  [87s]  true latent series (T=2400)
+
+[encode] per-mode SAEs
+  oracle best_feat = [499, 141, 34, 259, 14, 497, 315, 321]
+  oracle sign      = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+[R0] replication: per-mode SAE + oracle feature + oracle sign
+    sparsity[R0]: zero-frac 0.691 (range 0.619-0.760)   co-fire 244/2397 = n_eff/T 0.102
+  R0     F1=0.4449+-0.054  P=0.2959  R=0.9058  TP/FP/FN=10.9/26.4/1.1  matched=8/8  [396s]  oracle: pooling+N+per-mode SAE+feature+sign |r|vsZ=[0.11, 0.26, 0.34, 0.34, 0.41, 0.54, 0.54, 0.53]
+
+[R1] drop oracle SIGN
+  R1     F1=0.4449+-0.054  P=0.2959  R=0.9058  TP/FP/FN=10.9/26.4/1.1  matched=8/8  [417s]  unsup sign=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+[R2] drop oracle FEATURE SELECTION
+    sparsity[R2]: zero-frac 0.584 (range 0.506-0.713)   co-fire 451/2397 = n_eff/T 0.188
+  R2     F1=0.1527+-0.053  P=0.1090  R=0.2600  TP/FP/FN=3.1/26.3/8.9  matched=8/8  [286s]  rank=variance picks=[499, 226, 218, 230, 14, 497, 23, 125] |r|vsZ=[0.11, 0.2, 0.21, 0.09, 0.41, 0.54, 0.1, 0.53]
+  R2_freq F1=0.1083+-0.047  P=0.0679  R=0.2692  TP/FP/FN=3.2/44.4/8.8  matched=8/8  [918s]  rank=freq picks=[447, 242, 228, 418, 300, 329, 23, 203] |r|vsZ=[0.06, 0.23, 0.24, 0.06, 0.26, 0.47, 0.1, 0.49]
+  R2_pc1 F1=0.4451+-0.053  P=0.2929  R=0.9375  TP/FP/FN=11.2/27.8/0.8  matched=8/8  [895s]  rank=pc1 picks=[499, 98, 411, 259, 14, 269, 100, 125] |r|vsZ=[0.11, 0.13, 0.28, 0.34, 0.41, 0.43, 0.45, 0.53]
+
+[encode] MIXED SAE (sae_mixed.pt) — one dictionary, no mode labels
+  live features (nz>=2%): 338/512
+
+[R3a] drop oracle PER-MODE DICTIONARY (mixed SAE, argmax-var per stream)
+    sparsity[R3a]: zero-frac 0.528 (range 0.281-0.661)   co-fire 552/2397 = n_eff/T 0.230
+  R3a    F1=0.1682+-0.050  P=0.1136  R=0.3292  TP/FP/FN=4.0/31.0/8.1  matched=8/8  [303s]  picks=[72, 495, 316, 495, 216, 216, 316, 216] distinct=4 |r|vsZ=[0.11, 0.25, 0.26, 0.24, 0.46, 0.58, 0.26, 0.61]
+
+[R3b] drop oracle N + MODE PARTITION  <<< GRAPHCAST-MATCHED >>>
+    sparsity[R3b]: zero-frac 0.073 (range 0.000-0.388)   co-fire 2057/2397 = n_eff/T 0.858
+  rank=variance: N_hat=12 chosen=[495, 316, 396, 216, 143, 242, 499, 200, 72, 249, 401, 406]
+    MAP-R best |r| per discovered var: [0.257, 0.254, 0.274, 0.322, 0.277, 0.184, 0.347, 0.084, 0.233, 0.287, 0.245, 0.248]
+    matched 7/8 true modes: {0: 3, 1: 2, 2: 4, 3: 5, 4: 6, 6: 7, 11: 1}
+  R3b    F1=0.0189+-0.014  P=0.0106  R=0.0892  TP/FP/FN=1.1/99.6/10.9  matched=7/8  [941s]  rank=variance N_hat=12 matched=7/8
+  rank=freq: N_hat=12 chosen=[242, 401, 279, 238, 19, 200, 495, 143, 396, 316, 249, 226]
+    MAP-R best |r| per discovered var: [0.184, 0.245, 0.148, 0.063, 0.08, 0.084, 0.257, 0.277, 0.274, 0.254, 0.287, 0.081]
+    matched 7/8 true modes: {0: 3, 1: 5, 6: 1, 7: 6, 8: 4, 9: 2, 10: 7}
+  R3b_freq F1=0.0365+-0.013  P=0.0204  R=0.1767  TP/FP/FN=2.1/102.2/9.9  matched=7/8  [1872s]  rank=freq N_hat=12 matched=7/8
+  rank=pc1: N_hat=12 chosen=[396, 143, 495, 475, 216, 85, 499, 290, 316, 465, 358, 249]
+    MAP-R best |r| per discovered var: [0.274, 0.277, 0.257, 0.381, 0.322, 0.198, 0.347, 0.181, 0.254, 0.357, 0.281, 0.287]
+    matched 7/8 true modes: {2: 1, 3: 6, 4: 4, 5: 2, 6: 7, 9: 5, 10: 3}
+  R3b_pc1 F1=0.0401+-0.011  P=0.0221  R=0.2133  TP/FP/FN=2.6/113.6/9.4  matched=7/8  [802s]  rank=pc1 N_hat=12 matched=7/8
+
+==========================================================================
+rung              F1       P       R  matched
+trueZ         0.6157  0.4480  1.0000      8/8
+R0            0.4449  0.2959  0.9058      8/8
+R1            0.4449  0.2959  0.9058      8/8
+R2            0.1527  0.1090  0.2600      8/8
+R2_freq       0.1083  0.0679  0.2692      8/8
+R2_pc1        0.4451  0.2929  0.9375      8/8
+R3a           0.1682  0.1136  0.3292      8/8
+R3b           0.0189  0.0106  0.0892      7/8
+R3b_freq      0.0365  0.0204  0.1767      7/8
+R3b_pc1       0.0401  0.0221  0.2133      7/8

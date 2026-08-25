@@ -1,0 +1,48 @@
+R3b: 100 realisations, T=497, N_hat=12, chosen=[375, 404, 287, 35, 252, 105, 387, 407, 267, 76, 40, 308]
+     mapping (discovered -> true mode): {0: 1, 1: 2, 3: 6, 4: 7, 5: 4, 6: 5, 7: 3, 10: 0}
+     unmatched discovered variables: [2, 8, 9, 11]
+
+Mixed-SAE pooled feature matrix: PC0 explains 53.2% of variance; PC0-4 88.0%
+  evr[:10] = [0.5320000052452087, 0.20270000398159027, 0.08020000159740448, 0.0421999990940094, 0.02319999970495701, 0.014700000174343586, 0.0142000000923872, 0.012500000186264515, 0.012299999594688416, 0.005200000014156103]
+  |PC0 loading| of the 12 chosen: [0.7644000053405762, 0.31470000743865967, 0.08389999717473984, 0.11379999667406082, 0.0957999974489212, 0.1817999929189682, 0.09730000048875809, 0.046300001442432404, 0.013500000350177288, 0.006099999882280827, 0.0421999990940094, 0.04089999943971634]
+  |r(series, PC0 score)| per chosen var: [0.969, 0.564, 0.229, 0.427, 0.402, 0.804, 0.452, 0.298, 0.098, 0.051, 0.35, 0.35]
+
+Ordered (a,b,tau) slots: 264   of which true edges: 12   mean detection rate 0.194
+
+──────────────────────────────────────────────────────────────────────────
+FP structure — Spearman rho of DETECTION RATE vs each predictor
+  (computed over the 252 NON-true slots, i.e. pure false positives)
+    pc0prod    rho=+0.128  p=4.21e-02
+    projprod   rho=+0.069  p=2.74e-01
+    abscorr    rho=+0.157  p=1.28e-02
+    cosdec     rho=+0.045  p=4.77e-01
+    cofire     rho=+0.153  p=1.52e-02
+
+  detection rate on TRUE vs FALSE slots:
+    true  slots: 0.337 (n=12)
+    false slots: 0.188 (n=252)
+    point-biserial r(is_gt, rate) = +0.141  p=2.16e-02
+
+  FP detection rate by |PC0 loading| product quartile:
+    Q1 [0.0001,0.0015]  rate=0.129 (n=64)
+    Q2 [0.0015,0.0047]  rate=0.185 (n=69)
+    Q3 [0.0047,0.0174]  rate=0.207 (n=67)
+    Q4 [0.0174,0.2405]  rate=0.220 (n=64)
+
+  FP detection rate by |corr| quartile:
+    Q1 [0.003,0.130]  rate=0.184 (n=64)
+    Q2 [0.130,0.210]  rate=0.120 (n=65)
+    Q3 [0.210,0.318]  rate=0.187 (n=66)
+    Q4 [0.318,0.892]  rate=0.246 (n=65)
+
+  where do the FPs live?
+    slots touching an UNMATCHED discovered variable: rate=0.181 (n=152)
+    slots between two MATCHED variables            : rate=0.198 (n=100)
+    mean FP per realisation: 47.3 against 12 true edges
+
+  saturation check: fraction of all ordered slots detected in >=50% of realisations: 0.110
+  mean |corr| among the 12 chosen (off-diag): 0.252  max 0.892
+
+  conditioning of the R3b correlation matrix: cond=132.5  min eig=0.0272  max |corr| off-diag=0.892
+
+saved -> /home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci/fp_structure.npy

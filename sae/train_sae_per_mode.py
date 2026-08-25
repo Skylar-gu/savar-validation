@@ -37,21 +37,26 @@ from pathlib import Path
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--dy005", action="store_true")
 _ap.add_argument("--diurnal", action="store_true")
-_ap.add_argument("--allknobs", action="store_true")
+_ap.add_argument("--gnn", action="store_true",
+                 help="Use GNN message-passing activations (sae_data/gnn/)")
 _ap.add_argument("--deseason", action="store_true",
-                 help="Use ensemble-mean-deseasonalized activations (sae_data_*_deseason/)")
+                 help="Use ensemble-mean-deseasonalized activations (sae_data/*_deseason/)")
+_ap.add_argument("--datadir", default=None,
+                 help="Explicit data dir override (e.g. sae_data/hetdynamics); wins over all flags")
 _args = _ap.parse_args()
 
-if _args.allknobs:
-    DATA_DIR = Path("sae_data_allknobs")
-elif _args.diurnal:
-    DATA_DIR = Path("sae_data_diurnal")
+if _args.diurnal:
+    DATA_DIR = Path("sae_data/diurnal")
 elif _args.dy005:
-    DATA_DIR = Path("sae_data_dy005")
+    DATA_DIR = Path("sae_data/dy005")
+elif _args.gnn:
+    DATA_DIR = Path("sae_data/gnn")
 else:
-    DATA_DIR = Path("sae_data")
+    DATA_DIR = Path("sae_data/base")
 if _args.deseason:
     DATA_DIR = Path(str(DATA_DIR) + "_deseason")
+if _args.datadir:
+    DATA_DIR = Path(_args.datadir)
 OUT_DIR  = DATA_DIR
 
 # ── hyperparameters ───────────────────────────────────────────────────────────

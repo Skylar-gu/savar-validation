@@ -117,13 +117,13 @@ if __name__ == "__main__":
 
     baseline = evaluate(
         real_dir  = "data/realisations",
-        ckpt_path = "checkpoints/best.pt",
+        ckpt_path = "checkpoints/base/best.pt",
         label     = "D_y = 1.00 × I_L  (baseline)",
     )
 
     dy005 = evaluate(
         real_dir  = "data/realisations_dy005",
-        ckpt_path = "checkpoints_dy005/best.pt",
+        ckpt_path = "checkpoints/dy005/best.pt",
         label     = "D_y = 0.05 × I_L  (low-noise experiment)",
     )
 

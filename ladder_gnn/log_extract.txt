@@ -1,0 +1,13 @@
+MeshGNN /home/ec2-user/savar-project/checkpoints/hetdynamics_eqvar/best.pt  val_rmse=0.4352  T_EFF=2397
+  [10/100] 18s
+  [20/100] 35s
+  [30/100] 53s
+  [40/100] 70s
+  [50/100] 88s
+  [60/100] 105s
+  [70/100] 124s
+  [80/100] 141s
+  [90/100] 159s
+  [100/100] 176s
+GATE vs Follow-up-1 cache (3 reals): max|diff| = 1.24e-05
+finite: True  saved /home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci_gnn/activations_stride1_all.npy (100, 8, 2397, 256)  [179s]

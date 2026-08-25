@@ -27,8 +27,7 @@ def test_generators_resolve_savar_from_root():
     needle = "dirname(os.path.dirname(os.path.abspath(__file__)))"
     for f in ("data_gen/instantiate_model.py",
               "data_gen/generate_dataset.py",
-              "data_gen/generate_dy005.py",
-              "data_gen/generate_diurnal.py"):
+              "data_gen/generate_hetdynamics.py"):
         assert needle in read(f), f"{f} must resolve savar relative to repo root"
 
 
@@ -36,6 +35,20 @@ def test_extract_imports_cnn_from_train():
     s = read("sae/extract_activations.py")
     assert 'parent.parent / "train"' in s
     assert "from cnn_forecaster import" in s
+
+
+def test_no_machine_specific_paths():
+    """Every script resolves its root via paths.SAVAR_ROOT / __file__ — never a
+    hardcoded home directory (the ladders were ported from an absolute-path scratchpad)."""
+    bad = []
+    for f in list(ROOT.rglob("*.py")) + list(ROOT.rglob("*.sh")):
+        rel = f.relative_to(ROOT).parts
+        if rel[0] in (".git", "savar", "tests"):     # upstream lib; this file names the needle
+            continue
+        s = f.read_text()
+        if "/home/ec2-user" in s or "Path.home()" in s:
+            bad.append(str(f.relative_to(ROOT)))
+    assert not bad, f"machine-specific paths in: {bad}"
 
 
 def test_gitignore_excludes_large_and_vendored():

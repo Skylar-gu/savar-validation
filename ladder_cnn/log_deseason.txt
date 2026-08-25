@@ -1,0 +1,46 @@
+
+==========================================================================
+### diurnal  (sae_data/diurnal)
+  acts (25, 8, 2917, 256)
+  trueZ   F1=0.2922 P=0.1712 R=1.0000
+  R0      F1=0.3404 P=0.2112 R=0.8800  (oracle feature, |r|=[0.59, 0.65, 0.59, 0.46, 0.59, 0.38, 0.44, 0.51])
+  R2      F1=0.3578 P=0.2185 R=0.9900
+  R2_freq F1=0.3734 P=0.2401 R=0.8433
+  R2_pc1  F1=0.3761 P=0.2326 R=0.9867
+    mixed[diurnal] ep0 val 0.0273 (6s)
+    mixed[diurnal] ep1 val 0.0214 (12s)
+    mixed[diurnal] ep2 val 0.0190 (18s)
+    mixed[diurnal] ep3 val 0.0177 (24s)
+    mixed[diurnal] ep4 val 0.0169 (31s)
+    mixed[diurnal] ep5 val 0.0163 (37s)
+  R3a     F1=0.3602 P=0.2217 R=0.9667  picks=[24, 24, 24, 24, 24, 24, 24, 24] distinct=1
+  R3b     F1=0.0991 P=0.0548 R=0.5167  N_hat=12 matched=8/8 maxr=[0.63, 0.73, 0.62, 0.61, 0.55, 0.61, 0.71, 0.62, 0.62, 0.29, 0.55, 0.59]
+
+==========================================================================
+### deseason  (sae_data/diurnal_deseason)
+  acts (25, 8, 2917, 256)
+  trueZ   F1=0.8327 P=0.7173 R=1.0000
+  R0      F1=0.5270 P=0.3608 R=0.9867  (oracle feature, |r|=[0.28, 0.31, 0.27, 0.39, 0.24, 0.27, 0.43, 0.29])
+  R2      F1=0.5436 P=0.3789 R=0.9667
+  R2_freq F1=0.4390 P=0.3297 R=0.6700
+  R2_pc1  F1=0.5806 P=0.4121 R=0.9900
+    mixed[deseason] ep0 val 0.0395 (7s)
+    mixed[deseason] ep1 val 0.0311 (14s)
+    mixed[deseason] ep2 val 0.0282 (21s)
+    mixed[deseason] ep3 val 0.0268 (29s)
+    mixed[deseason] ep4 val 0.0258 (36s)
+    mixed[deseason] ep5 val 0.0253 (43s)
+  R3a     F1=0.5441 P=0.3789 R=0.9700  picks=[342, 342, 342, 342, 342, 342, 342, 342] distinct=1
+  R3b     F1=0.0265 P=0.0145 R=0.1533  N_hat=12 matched=5/8 maxr=[0.25, 0.17, 0.28, 0.22, 0.23, 0.15, 0.01, 0.04, 0.11, 0.14, 0.06, 0.13]
+
+==========================================================================
+rung         diurnal(raw)    deseason     delta
+trueZ              0.2922      0.8327   +0.5404
+R0                 0.3404      0.5270   +0.1866
+R2                 0.3578      0.5436   +0.1858
+R2_freq            0.3734      0.4390   +0.0656
+R2_pc1             0.3761      0.5806   +0.2045
+R3a                0.3602      0.5441   +0.1839
+R3b                0.0991      0.0265   -0.0725
+
+saved -> /home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci/deseason.npy

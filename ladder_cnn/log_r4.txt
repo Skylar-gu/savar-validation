@@ -1,0 +1,64 @@
+CNN 3.30M  val_rmse 1.0723  T_eff=497
+
+[pass A] per-pixel sample collection, 3 realisations
+  real 0: 37k samples so far (82s)
+  real 1: 75k samples so far (168s)
+  real 2: 112k samples so far (256s)
+  training set (112050, 256)  finite=True  all-zero rows=0
+
+[train] spatial TopK SAE 256->512 K=25, 12 epochs
+  ep  0 train 0.2053 val 0.1059 (3s)
+  ep  1 train 0.0908 val 0.0800 (6s)
+  ep  2 train 0.0726 val 0.0665 (9s)
+  ep  3 train 0.0614 val 0.0574 (13s)
+  ep  4 train 0.0537 val 0.0497 (15s)
+  ep  5 train 0.0463 val 0.0437 (18s)
+  ep  6 train 0.0411 val 0.0393 (20s)
+  ep  7 train 0.0374 val 0.0360 (23s)
+  ep  8 train 0.0346 val 0.0337 (26s)
+  ep  9 train 0.0327 val 0.0321 (29s)
+  ep 10 train 0.0311 val 0.0306 (32s)
+  ep 11 train 0.0301 val 0.0300 (35s)
+  best val MSE 0.0300  (variance 1.0336, FVU 0.0290)
+
+[pass B] streaming encode, 15 realisations
+  real 0: 106s
+  real 1: 202s
+  real 2: 281s
+  real 3: 352s
+  real 4: 425s
+  real 5: 492s
+  real 6: 564s
+  real 7: 648s
+  real 8: 736s
+  real 9: 803s
+  real 10: 870s
+  real 11: 937s
+  real 12: 1004s
+  real 13: 1071s
+  real 14: 1138s
+  pass B done in 1138s
+
+[R4] SEL-VAR over 512 spatial-SAE features
+  rank=variance: N_hat=12 chosen=[471, 214, 355, 466, 215, 374, 72, 57, 169, 143, 182, 1]
+    footprint cos to true W (max per var): [0.442, 0.158, 0.414, 0.428, 0.156, 0.141, 0.271, 0.203, 0.282, 0.16, 0.237, 0.151]
+    |r| vs Z        (max per var): [0.33, 0.318, 0.352, 0.198, 0.334, 0.252, 0.23, 0.173, 0.16, 0.367, 0.257, 0.318]
+    MAP-FOOT  F1=0.0036 P=0.0022 R=0.0111 matched=3/8
+    MAP-R     F1=0.0788 P=0.0465 R=0.2611 matched=8/8
+  rank=freq: N_hat=12 chosen=[1, 508, 466, 469, 475, 472, 477, 479, 341, 481, 54, 337]
+    footprint cos to true W (max per var): [0.151, 0.02, 0.428, 0.023, 0.102, 0.274, 0.04, 0.025, 0.046, 0.323, 0.021, 0.1]
+    |r| vs Z        (max per var): [0.318, 0.088, 0.198, 0.164, 0.347, 0.344, 0.345, 0.28, 0.029, 0.173, 0.261, 0.15]
+    MAP-FOOT  F1=0.0000 P=0.0000 R=0.0000 matched=1/8
+    MAP-R     F1=0.0407 P=0.0247 R=0.1167 matched=7/8
+  rank=pc1: N_hat=12 chosen=[262, 28, 116, 430, 115, 237, 458, 82, 1, 30, 241, 132]
+    footprint cos to true W (max per var): [0.136, 0.063, 0.046, 0.036, 0.136, 0.386, 0.056, 0.108, 0.151, 0.169, 0.232, 0.104]
+    |r| vs Z        (max per var): [0.356, 0.362, 0.326, 0.367, 0.335, 0.327, 0.342, 0.343, 0.318, 0.352, 0.318, 0.318]
+    MAP-FOOT  F1=0.0000 P=0.0000 R=0.0000 matched=1/8
+    MAP-R     F1=0.0678 P=0.0433 R=0.1611 matched=8/8
+
+[R4 null] 100 draws, N-RAND + N-PHASE
+  live candidates: 431/512
+Traceback (most recent call last):
+  File "/home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci/rung_r4.py", line 225, in <module>
+    t0 = time.time(); done = 0
+NameError: name '_init_worker' is not defined

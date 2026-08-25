@@ -38,32 +38,31 @@ from pathlib import Path
 from sklearn.decomposition import PCA
 from scipy.stats import pearsonr
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "train" / "cnn"))
 from cnn_forecaster import SpatioTemporalCNN, K, BASE_CH
 
 _ap = argparse.ArgumentParser()
 _ap.add_argument("--dy005", action="store_true", help="Use D_y=0.05·I_L dataset and CNN")
 _ap.add_argument("--diurnal", action="store_true", help="Use diurnal/annual dataset and CNN")
-_ap.add_argument("--allknobs", action="store_true",
-                 help="Use all-knobs dataset and CNN (gate failure is reported, not fatal)")
+_ap.add_argument("--binary", action="store_true", help="Use disjoint-binary-mask dataset and CNN")
 _args = _ap.parse_args()
 
-if _args.allknobs:
-    CKPT_PATH = Path("checkpoints_allknobs/best.pt")
-    DATA_DIR  = Path("data/realisations_allknobs")
-    OUT_DIR   = Path("sae_data_allknobs")
-elif _args.diurnal:
-    CKPT_PATH = Path("checkpoints_diurnal/best.pt")
+if _args.diurnal:
+    CKPT_PATH = Path("checkpoints/diurnal/best.pt")
     DATA_DIR  = Path("data/realisations_diurnal")
-    OUT_DIR   = Path("sae_data_diurnal")
+    OUT_DIR   = Path("sae_data/diurnal")
 elif _args.dy005:
-    CKPT_PATH = Path("checkpoints_dy005/best.pt")
+    CKPT_PATH = Path("checkpoints/dy005/best.pt")
     DATA_DIR  = Path("data/realisations_dy005")
-    OUT_DIR   = Path("sae_data_dy005")
+    OUT_DIR   = Path("sae_data/dy005")
+elif _args.binary:
+    CKPT_PATH = Path("checkpoints/binary/best.pt")
+    DATA_DIR  = Path("data/realisations_binary")
+    OUT_DIR   = Path("sae_data/binary")
 else:
-    CKPT_PATH = Path("checkpoints/best.pt")
+    CKPT_PATH = Path("checkpoints/base/best.pt")
     DATA_DIR  = Path("data/realisations")
-    OUT_DIR   = Path("sae_data")
+    OUT_DIR   = Path("sae_data/base")
 
 EXTRACT_BS = 128   # windows per forward pass during extraction
 
@@ -183,10 +182,7 @@ gate = min(mode_max_r)
 if gate < 0.25:
     print("  GATE FAILED — at least one mode has no PCA alignment > 0.25")
     print("  SAE will not find the mode structure. Investigate the CNN activations.")
-    if _args.allknobs:
-        print("  (--allknobs: gate failure recorded as a finding; continuing to SAE stage)")
-    else:
-        sys.exit(1)
+    sys.exit(1)
 else:
     print(f"  GATE PASSED — all 8 modes align with PCA (min max|r| = {gate:.3f})")
     weak = [f"X{j}" for j, r in enumerate(mode_max_r) if r < 0.3]

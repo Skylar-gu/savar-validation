@@ -10,8 +10,8 @@ Causal discovery uses the full 500 timestep observations.
 import numpy as np
 import os, glob
 
-REAL_DIR  = os.path.join("data", "realisations")
-SPLIT_DIR = os.path.join("data", "splits")
+REAL_DIR  = os.environ.get("SPLIT_REAL_DIR", os.path.join("data", "realisations"))
+SPLIT_DIR = os.environ.get("SPLIT_OUT_DIR", os.path.join("data", "splits"))
 
 for split in ("train", "val", "test"):
     os.makedirs(os.path.join(SPLIT_DIR, split), exist_ok=True)

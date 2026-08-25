@@ -1,0 +1,21 @@
+# nulls  sae_dir=sae_data/hetdynamics_eqvar  R_null=10  draws=100
+[encode] per-mode + mixed
+  mixed SAE: /home/ec2-user/savar-project/sae_data/hetdynamics_eqvar/sae_mixed.pt
+  picks R2=[499, 226, 218, 230, 14, 497, 23, 125]  R3a=[72, 495, 316, 495, 216, 216, 316, 216]  R3b N_hat=12 [495, 316, 396, 216, 143, 242, 499, 249, 200, 72, 401, 406]
+
+[observed at R_null]
+  R0    F1=0.4566 P=0.3056 R=0.9167 matched=8/8
+  R3b   F1=0.0211 P=0.0118 R=0.1000 matched=7/8
+
+[nulls] 300 draws total, 28 workers
+  100/300  538s elapsed, eta 1076s
+  200/300  852s elapsed, eta 426s
+  300/300  1151s elapsed, eta 0s
+
+======================================================================================
+rung  null     obs F1    mean     sd    min    p05    p50    p95    max  p-value
+R3b   rand     0.0211  0.0133 0.0126 0.0000 0.0000 0.0086 0.0383 0.0440   0.3069
+R3b   phase    0.0211  0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000   0.0099
+R3b   shift    0.0211  0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000   0.0099
+
+saved -> /home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci_gnn/nulls_gnn_eqvar.npy   (1151s)

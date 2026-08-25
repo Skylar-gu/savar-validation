@@ -29,8 +29,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pathlib import Path
 
-DATA_DIR = Path("sae_data")
-OUT_DIR  = Path("sae_data")
+DATA_DIR = Path("sae_data/base")
+OUT_DIR  = Path("sae_data/base")
 
 # ── hyperparameters ───────────────────────────────────────────────────────────
 

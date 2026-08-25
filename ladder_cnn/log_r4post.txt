@@ -1,0 +1,23 @@
+R4 cache: series (15, 497, 512), footprints (512, 2500)
+  all-zero feature series: 0/512
+  live candidates 431/512   chosen [471, 214, 355, 466, 215, 374, 72, 57, 169, 143, 182, 1]
+
+[observed]
+  R4 MAP-FOOT F1=0.0036 matched=3/8    MAP-R F1=0.0788 matched=8/8
+  25/200 133s eta 929s
+  50/200 260s eta 781s
+  75/200 394s eta 657s
+  100/200 518s eta 518s
+  125/200 657s eta 394s
+  150/200 794s eta 265s
+  175/200 932s eta 133s
+  200/200 1075s eta 0s
+
+============================================================================================
+null    matcher        obs    mean      sd     min     p50     p95     max   p-value
+rand    MAP-FOOT    0.0036  0.0013  0.0069  0.0000  0.0000  0.0030  0.0611    0.0495
+rand    MAP-R       0.0788  0.0594  0.0360  0.0000  0.0595  0.1205  0.1715    0.2871
+phase   MAP-FOOT    0.0036  0.0078  0.0053  0.0000  0.0079  0.0171  0.0219    0.7921
+phase   MAP-R       0.0788  0.0000  0.0000  0.0000  0.0000  0.0000  0.0000    0.0099
+
+saved -> /home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci/r4_null.npy   (1075s)

@@ -1,0 +1,9 @@
+R=20 T=497  cross-slots tested per realisation = 112
+expected detections under a CALIBRATED test at alpha=0.05: 5.6
+
+R0_SAE_features(68% zeros)       detections/realisation under independent circular shift:
+    mean 5.95  sd 2.40  median 6 max 15   => empirical type-I rate 0.0531 (nominal 0.0500, inflation 1.06x)
+trueZ(0% zeros)                  detections/realisation under independent circular shift:
+    mean 5.89  sd 2.37  median 6 max 14   => empirical type-I rate 0.0526 (nominal 0.0500, inflation 1.05x)
+
+saved -> /home/ec2-user/causal-graphcast/audit_pcmci_assumptions/savar_sae_pcmci/neff_test.npy
